@@ -1,9 +1,13 @@
+<div align="center">
+   
 # 🎭 chinese-novelist skill
 
 ### 让 AI 为你写一部完整的中文小说
 
 [![Claude Code Skill](https://img.shields.io/badge/Claude_Code-Skill-blue)](https://claude.com/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
+</div>
 
 
 ## ✨ 为什么用这个？
