@@ -1,11 +1,14 @@
 <div align="center">
-   
+
 # 🎭 chinese-novelist skill
 
 ### 让 AI 为你写一部完整的中文小说
 
+[![Version](https://img.shields.io/badge/version-2.0-blue.svg)](https://github.com/PenglongHuang/chinese-novelist-skill/releases/tag/v2.0)
 [![Claude Code Skill](https://img.shields.io/badge/Claude_Code-Skill-blue)](https://claude.com/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
+> **🎉 v2.0 重构发布**：引入三层递进式问答、偏好记忆系统、中断续写、三种写作模式和自动校验修复！查看 [v1.0 → v2.0 升级说明](https://github.com/PenglongHuang/chinese-novelist-skill/pull/10) 了解详情。
 
 </div>
 
@@ -233,6 +236,31 @@ chinese-novelist/
 | `outline-template.md` | 大纲模板（7列章节规划） |
 | `character-template.md` | 人物档案模板 |
 | `chapter-template.md` | 章节文件模板 |
+
+---
+
+## 🔄 版本更新
+
+### v2.0 → v1.0 重大升级
+
+**核心架构重构**
+- ✅ 从单一 5 问流程升级为**三层递进式问答**（Layer 1 必答 + Layer 2 可选深度定制）
+- ✅ 新增 **Phase 0 初始化**：用户偏好跨会话记忆、中断续写检测
+- ✅ 新增 **写作模式选择**：串行/子Agent并行/Agent Teams 三种模式
+- ✅ 新增 **Phase 4 自动校验**：字数与连贯性自动检查，不合格自动修复
+- ✅ 流程文档化：将详细执行指令从 SKILL.md 拆分到 `references/flows/` 独立维护
+
+**新增功能**
+- 🧠 **偏好记忆系统**：自动学习用户创作偏好（题材类型、叙事风格、章节数量倾向等）
+- ⏸️ **中断续写**：自动检测未完成项目，支持从断点继续创作
+- 📋 **写作计划 JSON**：机器可读的写作状态文件，支持并行写作协调
+- 🔢 **字数检查脚本**：`scripts/check_chapter_wordcount.py` 自动验证每章 3000-5000 字要求
+
+**文档重组**
+- 📁 `references/flows/`：新增 7 个流程文档（phase0-4 + shared-infrastructure）
+- 📁 `references/guides/`：重组 8 个写作指南文档
+
+**查看完整变更**：[v2.0 提交记录](https://github.com/PenglongHuang/chinese-novelist-skill/commits/v2.0/)
 
 ---
 
