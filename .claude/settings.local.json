@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Skill(chinese-humanizer)",
-      "Skill(skill-creator)"
-    ]
-  }
-}
