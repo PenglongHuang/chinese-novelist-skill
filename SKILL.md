@@ -32,10 +32,11 @@ metadata:
 
 ### 第一阶段：三层递进式问答
 
-通过递进式问答收集创作需求，确定小说定位：
+通过递进式问答收集创作需求，确定小说定位与标题：
 
 - **核心定位**（必答，Q1-Q3）：题材创意、主角设定、核心冲突 → 详见 [phase1-layer1-core.md](references/flows/phase1-layer1-core.md)
 - **深度定制与规格**（Q4-Q8）：世界观、视角基调、核心主题、读者定位、章节数量、配置确认 → 详见 [phase1-layer2-customize.md](references/flows/phase1-layer2-customize.md)
+- **标题生成**：AI 基于创意元素生成候选标题，用户选择或自定义 → 详见 [phase1-layer3-title.md](references/flows/phase1-layer3-title.md)
 
 ### 第二阶段：规划 + 二次确认
 
