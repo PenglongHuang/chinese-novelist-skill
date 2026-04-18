@@ -1,8 +1,10 @@
 # 第二阶段：规划 + 二次确认
 
+> **前置条件**：本阶段使用 Phase 1 Layer 3 用户确认的小说标题。标题信息从对话上下文中获取，用于命名项目目录、写入大纲文件头和写作计划 JSON。
+
 执行以下步骤：
 
-1. **创建项目文件夹**：`./chinese-novelist/{YYYYMMDD-HHmmss}-{小说名称}/`（相对当前工作目录）
+1. **创建项目文件夹**：`./chinese-novelist/{YYYYMMDD-HHmmss}-{Layer 3 确认的标题}/`（相对当前工作目录，使用用户在 Layer 3 选定的小说标题）
 2. **生成大纲**：创建 `00-大纲.md`，使用 [outline-template.md](../guides/outline-template.md) 模板，参考 [plot-structures.md](../guides/plot-structures.md) 填入完整的章节规划
 3. **生成人物档案**：创建 `01-人物档案.md`，使用 [character-template.md](../guides/character-template.md) 模板，创建主角、反派、配角档案
 4. **生成写作计划**：创建 `03-写作计划.json`，基于大纲内容填充，结构如下：
