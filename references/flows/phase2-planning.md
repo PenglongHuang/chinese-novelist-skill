@@ -23,7 +23,7 @@
        {
          "chapterNumber": 1,
          "title": "[章节标题]",
-         "filePath": "第01章.md",
+         "filePath": "第01章-[章节标题].md",
          "status": "pending",
          "wordCount": null,
          "wordCountPass": null,

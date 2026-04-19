@@ -27,18 +27,23 @@
 
 ### 步骤 2: 撰写
 
-4. 创建章节文件 — 使用 [chapter-template.md](../guides/chapter-template.md) 模板
+4. 创建章节文件 — 文件名格式：`第{XX}章-{章节标题}.md`（标题来自 `03-写作计划.json` 中的 `title` 字段），使用 [chapter-template.md](../guides/chapter-template.md) 模板
 5. **基于大纲规划创作** — 严格按照大纲中本章的核心事件和场景列表撰写正文
+5.5. **撰写章首引子** — 按大纲中本章的章首引子类型，参考 [hook-techniques.md](../guides/hook-techniques.md)「章首引子七式」，创作 50-150 字的引子文字
 6. 撰写正文 — **每章必须达到 3000-5000 字**
-   - 开头检查：前 20% 是否有即时冲突？→ [chapter-guide.md](../guides/chapter-guide.md)
-   - 对话规范 → [dialogue-writing.md](../guides/dialogue-writing.md)
+   - 章首引子：已创作（步骤 5.5，参考 [hook-techniques.md](../guides/hook-techniques.md)「章首引子七式」）
+   - 正文开头：第一段必须使用 [chapter-guide.md](../guides/chapter-guide.md) 十种开头技巧之一，建立即时冲突
+   - 张力节奏：全章至少 2 个张力波峰，连续 500 字以上无冲突时必须引入新张力（参考 [hook-techniques.md](../guides/hook-techniques.md) 悬念强度等级）
+   - 对话要求：每章至少 30% 对话内容，每段对话必须有潜台词或推进情节目的（参考 [dialogue-writing.md](../guides/dialogue-writing.md)）
+   - 意外转折：每章至少 1 个读者预期之外的事件或信息（参考 [chapter-guide.md](../guides/chapter-guide.md)「打破读者预期」）
    - 内容不足？使用 [content-expansion.md](../guides/content-expansion.md) 扩充技巧
-7. 设置结尾钩子 — 按大纲中本章的悬念钩子设计 → [hook-techniques.md](../guides/hook-techniques.md)
+7. 设置结尾钩子 — 按大纲中本章的悬念钩子设计 → [hook-techniques.md](../guides/hook-techniques.md)「悬念钩子十三式」
 8. **字数检查** — 必须使用脚本检查：`python scripts/check_chapter_wordcount.py <章节文件路径>`
 
 ### 步骤 3: 撰写后优化
 
 9. 连贯性检查 — 人物一致性、情节连贯、节奏控制
+9.5. **张力检查** — 检查全章节奏是否有波峰波谷、对话是否有个性、是否有意外转折（参考 [hook-techniques.md](../guides/hook-techniques.md) 悬念强度等级和 [chapter-guide.md](../guides/chapter-guide.md)「打破读者预期」）
 10. **深度润色（去除AI味）** — 重点检查并修改：
     - **去除过度修饰的形容词**：删减"璀璨"、"瑰丽"等AI常用词堆砌
     - **减少抽象陈述**：把"心中涌起复杂的情感"改为具体动作/对话
@@ -102,9 +107,13 @@ WHILE 03-写作计划.json 中存在 status != "completed" 的章节:
 1. **首先读取 {projectPath}/00-大纲.md**，找到当前章节的规划信息（核心事件、承接上章、悬念钩子、出场人物、场景列表）
 2. 读取 03-写作计划.json，确认章节状态
 3. 将当前章节 status 更新为 "in_progress"
-4. 创建章节文件，基于大纲规划撰写正文（3000-5000字）
-5. 前 20% 必须有即时冲突
-6. 结尾按大纲中的悬念钩子设计
+4. 创建章节文件，文件名格式：`第{XX}章-{章节标题}.md`（标题来自 `03-写作计划.json` 的 `title` 字段），基于大纲规划撰写正文（3000-5000字）
+5. 按大纲中的章首引子类型，参考 hook-techniques.md「章首引子七式」创作章首引子（50-150字）
+6. 正文开头第一段必须使用 chapter-guide.md 十种开头技巧之一
+7. 全章至少 2 个张力波峰，连续 500 字以上无冲突必须引入新张力
+8. 每章至少 30% 对话，对话必须有潜台词和角色个性
+9. 每章至少 1 个读者预期外的转折（参考 chapter-guide.md「打破读者预期」）
+10. 结尾按大纲中的悬念钩子设计（参考 hook-techniques.md「悬念钩子十三式」）
 7. 运行字数检查: python scripts/check_chapter_wordcount.py <文件路径>
 8. 深度润色（去除AI味）
 9. 再次字数检查
@@ -159,9 +168,13 @@ WHILE 03-写作计划.json 中存在 status != "completed" 的章节:
 4. 读取 03-写作计划.json，获取该章节状态
 5. 执行逐章创作流程:
    a. 更新 status 为 "in_progress"
-   b. 创建章节文件，基于大纲规划撰写正文（3000-5000字）
-   c. 前 20% 必须有即时冲突
-   d. 结尾按大纲中的悬念钩子设计
+   b. 创建章节文件，文件名格式：`第{XX}章-{章节标题}.md`（标题来自 `03-写作计划.json` 的 `title` 字段），基于大纲规划撰写正文（3000-5000字）
+   c. 按大纲中的章首引子类型，参考 hook-techniques.md「章首引子七式」创作章首引子（50-150字）
+   d. 正文开头第一段必须使用 chapter-guide.md 十种开头技巧之一
+   e. 全章至少 2 个张力波峰，连续 500 字以上无冲突必须引入新张力
+   f. 每章至少 30% 对话，对话必须有潜台词和角色个性
+   g. 每章至少 1 个读者预期外的转折（参考 chapter-guide.md「打破读者预期」）
+   h. 结尾按大纲中的悬念钩子设计（参考 hook-techniques.md「悬念钩子十三式」）
    e. 字数检查: python scripts/check_chapter_wordcount.py <文件路径>
    f. 深度润色（去除AI味）
    g. 再次字数检查
