@@ -1,11 +1,13 @@
 # 第二阶段：规划 + 二次确认
 
+> **前置条件**：本阶段使用 Phase 1 Layer 3 用户确认的小说标题。标题信息从对话上下文中获取，用于命名项目目录、写入大纲文件头和写作计划 JSON。
+
 执行以下步骤：
 
-1. **创建项目文件夹**：`./chinese-novelist/{YYYYMMDD-HHmmss}-{小说名称}/`（相对当前工作目录）
-2. **生成大纲**：创建 `00-大纲.md`，使用 [outline-template.md](../guides/outline-template.md) 模板，参考 [plot-structures.md](../guides/plot-structures.md) 填入完整的章节规划
-3. **生成人物档案**：创建 `01-人物档案.md`，使用 [character-template.md](../guides/character-template.md) 模板，创建主角、反派、配角档案
-4. **生成写作计划**：创建 `03-写作计划.json`，基于大纲内容填充，结构如下：
+1. **创建项目文件夹**：`./chinese-novelist/{YYYYMMDD-HHmmss}-{Layer 3 确认的标题}/`（相对当前工作目录，使用用户在 Layer 3 选定的小说标题）
+2. **生成人物档案**：创建 `00-人物档案.md`，使用 [character-template.md](../guides/character-template.md) 模板，参考 [character-building.md](../guides/character-building.md) 创建主角、反派、配角档案。**人物档案必须详细**：每个角色的性格核心、致命缺陷、说话风格/口头禅、恐惧/弱项、背景故事都要具体到可以直接指导写作的程度
+3. **生成大纲**：创建 `01-大纲.md`，使用 [outline-template.md](../guides/outline-template.md) 模板，参考 [plot-structures.md](../guides/plot-structures.md) 填入完整的章节规划。**大纲必须以人物驱动情节** 参照 `00-人物档案.md`，确保情节服务于人物成长弧线
+4. **生成写作计划**：创建 `02-写作计划.json`，基于大纲内容填充，结构如下：
    ```json
    {
      "version": 1,
@@ -21,7 +23,7 @@
        {
          "chapterNumber": 1,
          "title": "[章节标题]",
-         "filePath": "第01章.md",
+         "filePath": "第01章-[章节标题].md",
          "status": "pending",
          "wordCount": null,
          "wordCountPass": null,
@@ -50,6 +52,6 @@ Options:
 ```
 
 用户选择后：
-- 更新 `03-写作计划.json` 的 `writingMode` 字段
+- 更新 `02-写作计划.json` 的 `writingMode` 字段
 - 更新 `status` 为 `"in_progress"`
 - 进入第三阶段：疯狂创作 → 详见 [phase3-writing.md](phase3-writing.md)
