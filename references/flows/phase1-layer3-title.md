@@ -74,8 +74,8 @@ multiSelect: false
 标题存入当前对话上下文。Phase 2 规划阶段启动时，从上下文中读取标题，用于：
 
 - **命名项目目录**：`./chinese-novelist/{timestamp}-{标题}/`
-- **写入 `03-写作计划.json`** 的 `novelName` 字段
-- **写入 `00-大纲.md`** 的文件头
+- **写入 `02-写作计划.json`** 的 `novelName` 字段
+- **写入 `01-大纲.md`** 的文件头
 
 ### 3. 中断恢复
 

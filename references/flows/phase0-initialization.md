@@ -30,7 +30,7 @@
 
 扫描 `./chinese-novelist/` 目录下的项目文件夹：
 
-- 查找含 `03-写作计划.json` 且 `status` 为 `"in_progress"` 或 `"validating"` 的项目
+- 查找含 `02-写作计划.json` 且 `status` 为 `"in_progress"` 或 `"validating"` 的项目
 - 如果找到未完成项目：
   - 展示项目信息：小说名称、完成进度（X/Y 章已完成）
   - 提供选项：
