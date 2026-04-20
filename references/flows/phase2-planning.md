@@ -5,8 +5,8 @@
 执行以下步骤：
 
 1. **创建项目文件夹**：`./chinese-novelist/{YYYYMMDD-HHmmss}-{Layer 3 确认的标题}/`（相对当前工作目录，使用用户在 Layer 3 选定的小说标题）
-2. **生成大纲**：创建 `00-大纲.md`，使用 [outline-template.md](../guides/outline-template.md) 模板，参考 [plot-structures.md](../guides/plot-structures.md) 填入完整的章节规划
-3. **生成人物档案**：创建 `01-人物档案.md`，使用 [character-template.md](../guides/character-template.md) 模板，创建主角、反派、配角档案
+2. **生成人物档案**：创建 `01-人物档案.md`，使用 [character-template.md](../guides/character-template.md) 模板，参考 [character-building.md](../guides/character-building.md) 创建主角、反派、配角档案。**人物档案必须详细**：每个角色的性格核心、致命缺陷、说话风格/口头禅、恐惧/弱项、背景故事都要具体到可以直接指导写作的程度
+3. **生成大纲**：创建 `00-大纲.md`，使用 [outline-template.md](../guides/outline-template.md) 模板，参考 [plot-structures.md](../guides/plot-structures.md) 填入完整的章节规划。**大纲必须以人物驱动情节**：每章的核心事件应源自角色的性格缺陷、恐惧或内心渴望；悬念设计应利用角色之间的关系和矛盾。在写大纲时反复参照 `01-人物档案.md`，确保情节服务于人物成长弧线
 4. **生成写作计划**：创建 `03-写作计划.json`，基于大纲内容填充，结构如下：
    ```json
    {
