@@ -28,9 +28,8 @@
 
 ## 🚀 快速开始
 
-```
-使用 chinese-novelist 帮我写一部小说
-```
+安装skill：`npx skills add PenglongHuang/chinese-novelist-skill`
+输入指令：`使用 chinese-novelist 帮我写一部小说`
 
 ## 🖼️ 使用过程
 
