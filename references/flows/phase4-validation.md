@@ -63,3 +63,4 @@
 ```
 ⚠️ 第X章：字数不足（[实际字数]/3000），已重试3次
 ```
+同步将当前完成的小说加入到 `user-preferences.json` 的 `creationHistory` 中
