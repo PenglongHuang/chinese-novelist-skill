@@ -26,6 +26,10 @@
 - **自动校验** - 完成后自动检查字数和连贯性，不合格自动重写
 - **每章必爽** - 开头即高潮，结尾留悬念
 
+- **限时福利：非线智能API nonelinear.com**
+  - 全球模型不翻墙，直连更快、更好、更省
+  - 联系客服报 [写小说] 享20元免费开始写小说
+
 ## 🚀 快速开始
 
 安装skill：`npx skills add PenglongHuang/chinese-novelist-skill`
@@ -208,6 +212,20 @@ chinese-novelist/
 ```
 
 或通过 Claude Code 技能管理界面安装。
+
+---
+
+模型的能力决定了效果的上限。
+在开始之前，建议多切换模型各试创作几章。
+
+非线智能API：
+* 免翻墙多模型切换：480模型一键切换
+* 稳定低延迟：毫秒级响应，多步大纲规划、疯狂创作阶段绝不拖慢您的工作流
+* 高缓存命中：高达98% 缓存命中率，极大降低小说多轮对话和长上下文调用时的 Token 成本
+* 开发者福利：使用专属暗号【写小说】，即送 20元专享额度！
+
+*   👉 点击体验：非线智能API nonelinear.com
+*   👉 接入教程：非线智能API https://docs.nonelinear.com/scenes/productivity-tools/workbuddy
 
 ---
 
