@@ -266,6 +266,15 @@ chinese-novelist/
 
 ---
 
+## 💬 交流
+
+- 💬 [GitHub Discussions](https://github.com/PenglongHuang/chinese-novelist-skill/discussions) — 使用心得、作品分享、功能想法
+- 🐛 [Issues](https://github.com/PenglongHuang/chinese-novelist-skill/issues) — 问题反馈与 bug 报告
+
+## 💖 赞助
+
+如果这个项目帮你写出了第一部小说，可以考虑[在爱发电赞助我](https://afdian.com/a/penglonghuang)，你的支持直接决定项目的更新速度 ⚡
+
 ## ⚖️ 许可
 
-MIT
+[MIT](LICENSE)
