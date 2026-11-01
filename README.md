@@ -253,6 +253,11 @@ chinese-novelist/
 
 - [GitHub Discussions](https://github.com/PenglongHuang/chinese-novelist-skill/discussions) — 使用心得、作品分享、功能想法
 - [Issues](https://github.com/PenglongHuang/chinese-novelist-skill/issues) — 问题反馈与 bug 报告
+- **微信交流群**：扫码入群
+
+<p align="center">
+  <img src="assets/wechat-group-qr.png" width="240" alt="微信交流群二维码"/>
+</p>
 
 ## 赞助
 
