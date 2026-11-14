@@ -11,7 +11,9 @@ export function renderMarkdown(markdown,{projectId,assets={},routeForDocument=()
     return md.renderer.renderToken(tokens,index,{});
   };
   md.renderer.rules.image=(tokens,index)=>{
-    const token=tokens[index],source=token.attrGet('src');const asset=assets[source];
+    const token=tokens[index],source=token.attrGet('src');
+    const normalize=value=>{try{return encodeURI(decodeURIComponent(value));}catch{return value;}};
+    const asset=Object.hasOwn(assets,source)?assets[source]:Object.entries(assets).find(([key])=>normalize(key)===normalize(source))?.[1];
     if(!asset)return `<span class="image-unavailable">[图片未加载：${escapeHtml(token.content||source)}]</span>`;
     return `<img src="/api/projects/${encodeURIComponent(projectId)}/assets/${encodeURIComponent(asset)}" alt="${escapeHtml(token.content)}" loading="lazy">`;
   };

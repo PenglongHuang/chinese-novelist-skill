@@ -3,7 +3,11 @@ function headings(markdown) {
   const found=[];let fence=null;
   for(let i=0;i<lines.length;i++) {
     const marker=lines[i].match(/^ {0,3}(`{3,}|~{3,})/);
-    if(marker){if(!fence)fence=marker[1];else if(marker[1][0]===fence[0]&&marker[1].length>=fence.length)fence=null;continue;}
+    if(marker){
+      if(!fence)fence=marker[1];
+      else if(marker[1][0]===fence[0]&&marker[1].length>=fence.length&&/^ {0,3}(?:`{3,}|~{3,})\s*$/.test(lines[i]))fence=null;
+      continue;
+    }
     if(fence)continue;
     const heading=lines[i].match(/^ {0,3}(#{1,6})\s+(.+?)(?:\s+#+)?\s*$/);
     if(heading)found.push({line:i,level:heading[1].length,name:heading[2]});

@@ -10,11 +10,17 @@ const chapterPattern = /^第(\d+)章.*\.md$/;
 const pictures = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.avif']);
 const errorWith = (message, status) => Object.assign(new Error(message), { status });
 const count = n => Number.isFinite(n) && n >= 0 ? n : null;
+async function retryReplacement(operation) {
+  for(let attempt=0;;attempt++) {
+    try{return await operation();}
+    catch(error){if(error.status===403||attempt>=2)throw error;await new Promise(resolve=>setTimeout(resolve,30));}
+  }
+}
 
 export async function createCatalog(workspacePath) {
   const workspace = path.resolve(workspacePath);
   let projects = new Map(), resources = new Map(), version = '', warnings = [], queue = Promise.resolve();
-  const plans = new Map(), contentCache = new Map();
+  const plans = new Map(), planMissing = new Map(), contentCache = new Map();
 
   async function entries(directory) {
     try { return await fs.readdir(directory, { withFileTypes: true }); }
@@ -34,14 +40,14 @@ export async function createCatalog(workspacePath) {
     } catch { warnings.push('工作区目录不存在或无法读取；目录创建后会自动发现。'); }
     for (const directory of candidates) {
       const list = await entries(directory);
-      if (!resembles(list)) continue;
       const id = idFor(path.relative(workspace, directory) || '.');
+      if (!resembles(list)&&!projects.has(id)) continue;
       const projectWarnings = [];
       const docs = [];
       let latest = 0;
       async function register(fileName, kind, documentId = idFor(fileName)) {
         let info = null;
-        try { info = await safeFile(workspace, directory, fileName); }
+        try { info = await (resources.get(`${id}/${documentId}`)?.exists ? retryReplacement(()=>safeFile(workspace,directory,fileName)) : safeFile(workspace, directory, fileName)); }
         catch (error) { if (error.status === 403) projectWarnings.push(`已阻止越界资源：${fileName}`); }
         const resource = { id: documentId, name: fileName, fileName, kind, exists: !!info, version: info ? versionFor(info.stat) : null };
         if (info) latest = Math.max(latest, info.stat.mtimeMs);
@@ -52,14 +58,22 @@ export async function createCatalog(workspacePath) {
       let plan = null;
       const planDoc = docs.find(d => d.kind === 'plan');
       if (planDoc.exists) {
+        planMissing.delete(id);
         try {
-          const info = await safeFile(workspace, directory, artifacts.plan);
-          const raw = await fs.readFile(info.path, 'utf8');
-          const parsed = JSON.parse(raw.replace(/^\uFEFF/, ''));
-          if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) || !Array.isArray(parsed.chapters)) throw new Error('计划结构无效');
+          const parsed = await retryReplacement(async()=>{
+            const info=await safeFile(workspace,directory,artifacts.plan);
+            const raw=await fs.readFile(info.path,'utf8');
+            const value=JSON.parse(raw.replace(/^\uFEFF/,''));
+            if(!value||typeof value!=='object'||Array.isArray(value)||!Array.isArray(value.chapters))throw new Error('计划结构无效');
+            return value;
+          });
           plan = parsed; plans.set(id, parsed);
         } catch { plan = plans.get(id) || null; projectWarnings.push(plan ? '写作计划暂不可读，正在显示上次有效记录。' : '写作计划无法解析，进度未记录。'); }
-      } else plans.delete(id);
+      } else if(plans.has(id)) {
+        const missed=(planMissing.get(id)||0)+1;planMissing.set(id,missed);
+        if(missed<=3){plan=plans.get(id);projectWarnings.push('写作计划暂时缺失，正在显示上次有效记录。');}
+        else {plans.delete(id);projectWarnings.push('写作计划文件缺失，进度未记录。');}
+      }
       const chapters = [], seen = new Set();
       for (const item of plan?.chapters || []) {
         if (!item || typeof item !== 'object') continue;
@@ -92,6 +106,7 @@ export async function createCatalog(workspacePath) {
     const changedProjects = [...new Set([...projects.keys(), ...next.keys()])].filter(id => JSON.stringify(projects.get(id)) !== JSON.stringify(next.get(id)));
     const changedDocuments = [...new Set([...resources.keys(), ...nextResources.keys()])].filter(id => resources.get(id)?.version !== nextResources.get(id)?.version);
     projects = next; resources = nextResources;
+    for(const id of plans.keys())if(!projects.has(id)){plans.delete(id);planMissing.delete(id);}
     version = idFor(JSON.stringify([...projects]) + JSON.stringify(warnings));
     for (const key of contentCache.keys()) if (!resources.has(key)) contentCache.delete(key);
     return { version, changedProjects, changedDocuments };
@@ -106,11 +121,8 @@ export async function createCatalog(workspacePath) {
   }
   async function readDocument(projectId, docId) {
     const key = `${projectId}/${docId}`;
-    const { resource, info } = await resolveResource(projectId, docId).catch(error => {
-      if (error.code === 'ENOENT') error.status = 404;
-      throw error;
-    });
     try {
+      const { resource, info } = await retryReplacement(()=>resolveResource(projectId,docId));
       const text = await fs.readFile(info.path, 'utf8');
       const assets = {};
       for (const match of text.matchAll(/!\[[^\]]*\]\(([^\s)]+)(?:\s+[^)]*)?\)/g)) {
@@ -126,7 +138,9 @@ export async function createCatalog(workspacePath) {
       const result = { text, version: versionFor(info.stat), stale: false, warnings: [], assets };
       contentCache.set(key, result); return result;
     } catch (error) {
+      if(error.status===403)throw error;
       if (contentCache.has(key)) return { ...contentCache.get(key), stale: true, warnings: ['资料暂不可读，显示上次成功读取的内容。'] };
+      if(error.code==='ENOENT'||error.status===404)throw errorWith('资料不存在或尚未生成',404);
       throw errorWith('资料暂不可读，请重试', 503);
     }
   }

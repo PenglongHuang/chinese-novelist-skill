@@ -5,6 +5,23 @@ import { fixture, plan } from './helpers.mjs';
 import { createCatalog } from '../catalog.mjs';
 
 export const tests = [
+  ['keeps cached chapter and plan during replacement gaps, then recovers',async()=>{
+    const f=await fixture();
+    try {
+      const planned=await f.write('book/02-写作计划.json',plan('保留书名'));
+      const chapter=await f.write('book/第02章-第二章.md','原正文');
+      const c=await createCatalog(f.root),p=c.listProjects()[0],doc=p.chapters.find(c=>c.number===2);
+      await c.readDocument(p.id,doc.id);
+      await fs.rename(chapter,chapter+'.replacement');
+      const cached=await c.readDocument(p.id,doc.id);
+      assert.equal(cached.text,'原正文');assert.equal(cached.stale,true);assert(cached.warnings.length);
+      await fs.rename(planned,planned+'.replacement');await c.refresh();
+      assert.equal(c.getProject(p.id).title,'保留书名');assert.equal(c.getProject(p.id).totalChapters,3);assert(c.getProject(p.id).warnings.length);
+      await fs.rename(chapter+'.replacement',chapter);await fs.rename(planned+'.replacement',planned);await c.refresh();
+      assert.equal(c.getProject(p.id).warnings.length,0);assert.equal((await c.readDocument(p.id,doc.id)).stale,false);
+      await fs.rm(f.root,{recursive:true});await c.refresh();assert.equal(c.getProject(p.id),null);
+    }finally{await f.close();}
+  }],
   ['discovers same-title projects, legacy chapters, numeric order without writing', async () => {
     const f = await fixture();
     try {

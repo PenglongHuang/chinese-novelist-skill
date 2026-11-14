@@ -48,7 +48,9 @@ async function display({reload=false}={}) {
   let chapter=null,docId=r.view;
   if(r.view==='read') {
     const preferred=r.chapterId||readPreference('chapter:'+r.id,null);
-    chapter=project.chapters.find(c=>c.id===preferred)||project.chapters.find(c=>c.exists);
+    chapter=project.chapters.find(c=>c.id===preferred);
+    if(r.chapterId&&!chapter){current={key:location.hash,projectId:r.id};q('#content').innerHTML=empty('章节不存在或已移除','当前链接对应的章节已不在作品目录中。请选择正文导航，重新选择章节。');return;}
+    if(!chapter)chapter=project.chapters.find(c=>c.exists);
     if(!chapter){current={key:location.hash,projectId:r.id};q('#content').innerHTML=empty('正文尚未生成','章节文件生成后将出现在目录中。你可以先查看大纲、人物与文风资料。');return;}
     if(!r.chapterId)history.replaceState(null,'',href(r.id,'read',chapter.id));
     writePreference('chapter:'+r.id,chapter.id);docId=chapter.id;
@@ -56,7 +58,7 @@ async function display({reload=false}={}) {
   if(r.view==='facts')docId='outline';
   if(r.view==='summaries'&&!project.documents.find(d=>d.id==='summaries')?.exists)docId='outline';
   const info=chapter||project.documents.find(d=>d.id===docId);
-  if(!info?.exists){current={key:location.hash,projectId:r.id,docId};q('#content').innerHTML=empty('资料尚未生成',`此作品还没有可读取的${viewNames[r.view]}资料。文件生成后会自动发现。`);return;}
+  if(!info?.exists&&!(current?.projectId===r.id&&current?.docId===docId&&current?.version)){current={key:location.hash,projectId:r.id,docId};q('#content').innerHTML=empty('资料尚未生成',`此作品还没有可读取的${viewNames[r.view]}资料。文件生成后会自动发现。`);return;}
   const key=location.hash;
   if(oldKey!==key)rawMode=false;
   try {

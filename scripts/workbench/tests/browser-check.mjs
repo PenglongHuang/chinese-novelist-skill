@@ -14,14 +14,14 @@ const playwright=process.env.WORKBENCH_PLAYWRIGHT_MODULE
 const f=await fixture();let service,browser;
 try {
   const body=Array.from({length:80},(_,i)=>`他把车票翻过来，第${i+1}道折痕里仍留着一点潮气。那个人没有回答。他站在原地，等脚步声从走廊尽头传来。`).join('\n\n');
-  const template='# 第01章：最后一班车\n\n## 本章概要\n不可出现在阅读稿的概要\n\n---\n## 章首引子\n> 车票背面写着他的名字。\n\n---\n## 正文\n'+body+'\n\n![本地图片](lamp.png)\n\n![远程图片](https://example.invalid/tracker.png)\n\n<script>window.workbenchInjected=true</script>\n\n<img src=x onerror="window.workbenchInjected=true">\n\n[危险链接](javascript:alert(1))\n\n## 章节备注\n不可出现在阅读稿的备注';
+  const template='# 第01章：最后一班车\n\n## 本章概要\n不可出现在阅读稿的概要\n\n---\n## 章首引子\n> 车票背面写着他的名字。\n\n---\n## 正文\n'+body+'\n\n![本地图片](插图.png)\n\n![远程图片](https://example.invalid/tracker.png)\n\n<script>window.workbenchInjected=true</script>\n\n<img src=x onerror="window.workbenchInjected=true">\n\n[危险链接](javascript:alert(1))\n\n## 章节备注\n不可出现在阅读稿的备注';
   await f.write('作品 一/第01章-最后一班车.md',template);
   await f.write('作品 一/第02章-空座.md','# 第02章：空座\n\n雨衣留在座位上，妹妹不见了。');
   await f.write('作品 一/00-人物档案.md','# 人物档案\n## 陈渡\n列车员，害怕面对旧事。');
   await f.write('作品 一/01-大纲.md','# 最后一班列车 大纲\n- **题材**：悬疑\n## 章节规划\n|章节|事件|\n|---|---|\n|第1章|重逢|\n## 设定与事实词典\n钥匙归属：哥哥\n## 章节摘要\n### 第1章\n妹妹归来。');
   await f.write('作品 一/02-写作计划.json',{novelName:'最后一班列车',totalChapters:3,status:'in_progress',chapters:[{chapterNumber:1,title:'最后一班车',filePath:'第01章-最后一班车.md',status:'completed',wordCount:3200,wordCountPass:true},{chapterNumber:2,title:'空座',filePath:'第02章-空座.md',status:'completed',wordCount:3000},{chapterNumber:3,title:'未生成',filePath:'第03章-未生成.md',status:'pending'}]});
   await f.write('同名作品/02-写作计划.json',{novelName:'最后一班列车',totalChapters:1,chapters:[]});
-  const image=path.join(f.root,'作品 一/lamp.png');await fs.writeFile(image,Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6b0UAAAAASUVORK5CYII=','base64'));
+  const image=path.join(f.root,'作品 一/插图.png');await fs.writeFile(image,Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6b0UAAAAASUVORK5CYII=','base64'));
   service=await startWorkbench({workspace:f.root,intervalMs:100});
   browser=await playwright.chromium.launch({channel:process.env.WORKBENCH_BROWSER||'chrome',headless:true});
   const page=await browser.newPage({viewport:{width:1440,height:950}});
@@ -32,6 +32,9 @@ try {
   assert.equal(await page.locator('.book-link').count(),2);
   if(process.env.WORKBENCH_SCREENSHOT)await page.screenshot({path:process.env.WORKBENCH_SCREENSHOT.replace(/\.png$/,'.shelf.png'),fullPage:true});
   const p=service.catalog.listProjects().find(p=>p.directoryName==='作品 一');
+  await page.goto(service.url+`#/projects/${p.id}/read/deleted-chapter`);
+  await page.waitForFunction(()=>document.querySelector('#content')?.textContent.includes('章节不存在'),{timeout:2500});
+  assert.equal(await page.locator('.markdown').count(),0);
   await page.goto(service.url+`#/projects/${p.id}/read/${p.chapters[0].id}`);
   await page.waitForSelector('.markdown h1');
   if(process.env.WORKBENCH_SCREENSHOT)await page.screenshot({path:process.env.WORKBENCH_SCREENSHOT.replace(/\.png$/,'.reader.png')});
