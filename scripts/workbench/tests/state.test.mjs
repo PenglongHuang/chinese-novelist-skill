@@ -4,6 +4,22 @@ import { fixture } from './helpers.mjs';
 import { updateChapter, reconcileProject } from '../state.mjs';
 
 export const tests=[
+  ['empty summary shells block completion and batch merge fills only the matching shell',async()=>{
+    const f=await fixture();try{
+      const shell='## 第02章 修伞\r\n\r\n### 关键事件与后果\r\n\r\n### 人物当前处境\r\n\r\n### 行动条件与未了事项\r\n\r\n';
+      const prefix='# 摘要\r\n保留作者说明\r\n\r\n## 第01章 归家\r\n母亲将钥匙交给她。\r\n\r\n',suffix='## 第03章 放晴\r\n她归还修好的伞。\r\n\r\n## 全书交接\r\n保留收尾说明\r\n';
+      const original=prefix+shell+suffix;
+      await f.write('02-写作计划.json',{minWordsPerChapter:1,chapters:[{chapterNumber:2,title:'修伞',filePath:'第02章.md',status:'validating'}]});await f.write('第02章.md','修好旧伞');await f.write('99-章节摘要.md',original);
+      await assert.rejects(updateChapter(f.root,2,'completed'));
+      assert.deepEqual((await reconcileProject(f.root)).missingSummaries,[2]);
+      await f.write('_batch1-summaries.md','## 第2章\n\n### 关键事件与后果\n她修好母亲的旧伞，留下开店的决定。\n\n### 人物当前处境\n母亲尚不知道她准备辞职。');
+      await reconcileProject(f.root,{apply:true});
+      const merged=await fs.readFile(f.root+'/99-章节摘要.md','utf8');
+      assert.equal((merged.match(/^## 第0?2章/gm)||[]).length,1);assert(merged.startsWith(prefix));assert(merged.endsWith(suffix));assert(merged.includes('## 第02章 修伞'));assert(merged.includes('她修好母亲的旧伞'));
+      await updateChapter(f.root,2,'completed');
+      await reconcileProject(f.root,{apply:true});assert.equal(await fs.readFile(f.root+'/99-章节摘要.md','utf8'),merged);
+    }finally{await f.close();}
+  }],
   ['rejects conflicting canonical duplicates and preserves nonchapter notes during merge',async()=>{
     const f=await fixture();try{
       await f.write('02-写作计划.json',{minWordsPerChapter:1,chapters:[{chapterNumber:1,filePath:'第01章.md',status:'validating'}]});await f.write('第01章.md','正文');

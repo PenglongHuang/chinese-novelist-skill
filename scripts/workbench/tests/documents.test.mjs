@@ -1,7 +1,17 @@
 import assert from 'node:assert/strict';
-import { extractReadingContent, extractSection } from '../web/documents.js';
+import { extractReadingContent, extractSection, parseChapterSummaries } from '../web/documents.js';
 
 export const tests = [
+  ['summary shells and placeholder prose do not count as completed summaries',()=>{
+    const shell='## 第01章 归家\n\n### 关键事件与后果\n\n### 人物当前处境\n\n### 行动条件与未了事项\n';
+    assert.deepEqual(parseChapterSummaries(shell),[]);
+    assert.deepEqual(parseChapterSummaries(shell.replace('### 人物当前处境','[待补充本章摘要]\n<!-- 在此填写真实事件 -->\n### 人物当前处境')),[]);
+    assert.deepEqual(parseChapterSummaries(shell.replace('### 行动条件与未了事项','母亲仍不知道他已离职。\n### 行动条件与未了事项')),[]);
+    const filled=shell.replace('### 关键事件与后果','### 关键事件与后果\n他卖掉返程票，决定留下修屋顶。');
+    assert.equal(parseChapterSummaries(filled)[0].number,1);
+    assert.equal(parseChapterSummaries('## 第2章\n他离开了故乡。').length,1);
+    assert.equal(parseChapterSummaries('## 第2章\n```md\n## 第9章\n```\n他离开了故乡。').length,1);
+  }],
   ['does not treat a fence with trailing info as a closing fence',()=>{
     const text='# 第01章：雨\n## 本章概要\n概要\n## 正文\n开始\n```text\n```not-a-closing-fence\n## 章节备注\n这仍在代码块内\n```\n不能丢掉的真正结尾\n## 章节备注\n实际备注';
     const result=extractReadingContent(text);

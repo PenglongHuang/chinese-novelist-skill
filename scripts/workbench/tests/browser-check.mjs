@@ -23,6 +23,8 @@ try {
   await f.write('作品 一/00-人物档案.md','# 人物档案\n## 陈渡\n列车员，害怕面对旧事。');
   await f.write('作品 一/01-大纲.md','# 最后一班列车 大纲\n- **题材**：悬疑\n## 章节规划\n|章节|事件|\n|---|---|\n|第1章|重逢|\n## 设定与事实词典\n钥匙归属：哥哥\n## 章节摘要\n### 第1章\n妹妹归来。');
   await f.write('作品 一/02-写作计划.json',{novelName:'最后一班列车',totalChapters:3,status:'in_progress',chapters:[{chapterNumber:1,title:'最后一班车',filePath:'第01章-最后一班车.md',status:'completed',wordCount:3200,wordCountPass:true},{chapterNumber:2,title:'空座',filePath:'第02章-空座.md',status:'completed',wordCount:3000},{chapterNumber:3,title:'未生成',filePath:'第03章-未生成.md',status:'pending'}]});
+  const shells='# 章节摘要\n\n'+[1,2,3].map(n=>`## 第0${n}章\n\n### 关键事件与后果\n\n### 人物当前处境\n\n### 行动条件与未了事项\n`).join('\n');
+  await f.write('作品 一/99-章节摘要.md',shells);
   await f.write('同名作品/02-写作计划.json',{novelName:'最后一班列车',totalChapters:1,chapters:[]});
   const image=path.join(f.root,'作品 一/插图.png');await fs.writeFile(image,Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6b0UAAAAASUVORK5CYII=','base64'));
   service=await startWorkbench({workspace:f.root,intervalMs:100});
@@ -74,6 +76,12 @@ try {
   console.log('PASS current document stays stable until explicit reload; new chapters update navigation');
   await page.locator('[data-view="style"]').click();await page.waitForFunction(()=>document.querySelector('#content')?.textContent.includes('资料尚未生成'));
   await page.locator('[data-view="summaries"]').click();await page.waitForFunction(()=>document.querySelector('.markdown')?.textContent.includes('妹妹归来'));
+  assert((await page.locator('.summary-coverage').innerText()).includes('1 / 4'));
+  await f.write('作品 一/99-章节摘要.md',shells.replace('## 第02章\n\n### 关键事件与后果','## 第02章\n\n### 关键事件与后果\n妹妹留下雨衣，独自下了车。'));
+  await page.waitForSelector('#doc-updated:not([hidden])');assert(!(await page.locator('.markdown').innerText()).includes('独自下了车'));
+  await page.locator('#reload-document').click();await page.waitForFunction(()=>document.querySelector('.markdown')?.textContent.includes('独自下了车'));
+  assert((await page.locator('.summary-coverage').innerText()).includes('2 / 4'));
+  console.log('PASS empty summary shells remain missing; filled summaries update coverage and wait for explicit reading reload');
   await page.locator('[data-view="progress"]').click();await page.waitForSelector('[data-status-filter="needs_sync"]');
   assert((await page.locator('#content').innerText()).includes('正文未生成'));
   await page.locator('[data-status-filter="pending"]').click({timeout:2500});

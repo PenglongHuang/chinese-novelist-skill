@@ -6,6 +6,16 @@ import { createCatalog } from '../catalog.mjs';
 import { updateChapter } from '../state.mjs';
 
 export const tests = [
+  ['planned summary shells show missing coverage until real events are saved',async()=>{
+    const f=await fixture();try{
+      await f.write('book/02-写作计划.json',{minWordsPerChapter:1,totalChapters:2,chapters:[1,2].map(chapterNumber=>({chapterNumber,filePath:`第0${chapterNumber}章.md`,status:'pending'}))});
+      const shell=n=>`## 第0${n}章\n\n### 关键事件与后果\n\n### 人物当前处境\n\n### 行动条件与未了事项\n`;
+      await f.write('book/99-章节摘要.md','# 摘要\n'+shell(1)+shell(2));const c=await createCatalog(f.root),id=c.listProjects()[0].id;
+      assert.deepEqual(c.getProject(id).summaryCoverage,{available:0,canonical:0,total:2,missing:[1,2],conflicts:[]});
+      await f.write('book/99-章节摘要.md','# 摘要\n'+shell(1).replace('### 关键事件与后果','### 关键事件与后果\n她留下了家门钥匙。')+shell(2));await c.refresh();
+      assert.equal(c.getProject(id).summaryCoverage.available,1);assert.deepEqual(c.getProject(id).summaryCoverage.missing,[2]);
+    }finally{await f.close();}
+  }],
   ['invalidates completion after only the canonical summary changes',async()=>{
     const f=await fixture();try{
       await f.write('book/02-写作计划.json',{minWordsPerChapter:1,chapters:[{chapterNumber:1,filePath:'第01章.md',status:'validating'}]});await f.write('book/第01章.md','正文');await f.write('book/99-章节摘要.md','## 第1章\n离开');

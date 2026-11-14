@@ -3,7 +3,7 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { safeFile, idFor } from './paths.mjs';
 import { collectSummaries } from './inspection.mjs';
-import { countNarrative } from './web/documents.js';
+import { countNarrative, mergeChapterSummaries } from './web/documents.js';
 
 async function locked(project,operation){
   const root=await fs.realpath(project),lock=path.join(root,'.chapter-state.lock');let handle;
@@ -51,7 +51,7 @@ export async function reconcileProject(project,{apply=false}={}){return locked(p
     const additions=[...ctx.summaries.entries.values()].filter(e=>e.kind!=='canonical'&&!ctx.summaries.conflicts.has(e.number)).sort((a,b)=>a.number-b.number);
     if(additions.length){
       let original='# 章节摘要';try{original=await ctx.read('99-章节摘要.md');}catch(error){if(error.code!=='ENOENT')throw error;}
-      await atomic(path.join(root,'99-章节摘要.md'),original.trimEnd()+'\n\n'+additions.map(e=>e.markdown).join('\n\n')+'\n');
+      await atomic(path.join(root,'99-章节摘要.md'),mergeChapterSummaries(original,additions));
     }
     ctx.summaries=await collectSummaries(await fs.readdir(root),ctx.read);
   }

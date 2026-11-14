@@ -231,7 +231,7 @@ chinese-novelist/
     ├── 00-人物档案.md                  # 主角、反派、配角档案
     ├── 02-写作计划.json                # 章节状态与字数记录
     ├── 03-文风基准.md                  # 文风指纹、基准段落、AI味负面清单
-    ├── 99-章节摘要.md                  # 逐章事件后果与人物状态
+    ├── 99-章节摘要.md                  # 预建全章框架，每章收尾原位填写
     ├── 第01章-最后一班列车.md
     ├── 第02章-消失的乘客.md
     └── ...
@@ -266,6 +266,7 @@ chinese-novelist/
 | `outline-template.md` | 大纲与设定词典模板 |
 | `character-template.md` | 人物档案模板 |
 | `chapter-template.md` | 章节文件模板 |
+| `summary-template.md` | 章节摘要框架与填写规则 |
 
 ---
 
