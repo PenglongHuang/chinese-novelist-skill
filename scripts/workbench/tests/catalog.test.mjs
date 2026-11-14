@@ -3,8 +3,16 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fixture, plan } from './helpers.mjs';
 import { createCatalog } from '../catalog.mjs';
+import { updateChapter } from '../state.mjs';
 
 export const tests = [
+  ['invalidates completion after only the canonical summary changes',async()=>{
+    const f=await fixture();try{
+      await f.write('book/02-写作计划.json',{minWordsPerChapter:1,chapters:[{chapterNumber:1,filePath:'第01章.md',status:'validating'}]});await f.write('book/第01章.md','正文');await f.write('book/99-章节摘要.md','## 第1章\n离开');
+      await updateChapter(f.root+'/book',1,'completed');const c=await createCatalog(f.root);assert.equal(c.listProjects()[0].chapters[0].effectiveStatus,'completed');
+      await f.write('book/99-章节摘要.md','## 第1章\n没有离开');await c.refresh();assert.equal(c.listProjects()[0].chapters[0].effectiveStatus,'needs_sync');
+    }finally{await f.close();}
+  }],
   ['observes stale pending chapters and previews unmerged summaries without writing',async()=>{
     const f=await fixture();try{
       await f.write('book/02-写作计划.json',{...plan(),minWordsPerChapter:3});

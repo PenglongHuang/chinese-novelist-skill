@@ -3,7 +3,9 @@ import os from 'node:os';
 import path from 'node:path';
 
 export async function fixture() {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'novel-workbench-'));
+  const base = path.resolve(process.env.WORKBENCH_TEST_TEMP || os.tmpdir());
+  await fs.mkdir(base, {recursive:true});
+  const root = await fs.mkdtemp(path.join(base, 'novel-workbench-'));
   return {
     root,
     async write(relative, content) {
@@ -12,7 +14,10 @@ export async function fixture() {
       await fs.writeFile(target, typeof content === 'string' ? content : JSON.stringify(content));
       return target;
     },
-    async close() { await fs.rm(root, { recursive: true, force: true }); },
+    async close() {
+      if(path.dirname(path.resolve(root))!==base)throw new Error('Fixture cleanup escaped its temporary directory');
+      await fs.rm(root, { recursive: true, force: true });
+    },
   };
 }
 

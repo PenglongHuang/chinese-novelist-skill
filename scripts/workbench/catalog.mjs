@@ -91,7 +91,7 @@ export async function createCatalog(workspacePath) {
         if (!item || typeof item !== 'object') continue;
         const fileName = typeof item.filePath === 'string' ? item.filePath : `第${item.chapterNumber}章.md`;
         const resource = await register(fileName, 'chapter'); seen.add(fileName);
-        chapters.push({ ...resource, number: count(item.chapterNumber), title: String(item.title || fileName), recordedStatus: typeof item.status === 'string' ? item.status : null, wordCount: count(item.wordCount), wordCountPass: typeof item.wordCountPass === 'boolean' ? item.wordCountPass : null, validatedContentHash:item.validatedContentHash||null, unplanned: false });
+        chapters.push({ ...resource, number: count(item.chapterNumber), title: String(item.title || fileName), recordedStatus: typeof item.status === 'string' ? item.status : null, wordCount: count(item.wordCount), wordCountPass: typeof item.wordCountPass === 'boolean' ? item.wordCountPass : null, validatedContentHash:item.validatedContentHash||null,summaryHash:item.summaryHash||null, unplanned: false });
       }
       for (const entry of list) {
         const match = chapterPattern.exec(entry.name);
@@ -106,7 +106,7 @@ export async function createCatalog(workspacePath) {
       for(const chapter of chapters){
         let actual=null,actualContentHash=null;try{const observation=await observed(chapter.fileName);actual=observation.wordCount;actualContentHash=observation.contentHash;}catch{}
         const summary=summaries.entries.get(chapter.number);
-        Object.assign(chapter,{actualWordCount:actual,actualContentHash,actualWordCountPass:actual===null?null:actual>=minimum,minWords:minimum,summarySource:summary?.kind||'missing',summaryFile:summary?.name||null,summaryConflict:summaries.conflicts.has(chapter.number)});
+        Object.assign(chapter,{actualWordCount:actual,actualContentHash,actualSummaryHash:summary?idFor(summary.body):null,actualWordCountPass:actual===null?null:actual>=minimum,minWords:minimum,summarySource:summary?.kind||'missing',summaryFile:summary?.name||null,summaryConflict:summaries.conflicts.has(chapter.number)});
         Object.assign(chapter,inspectStatus(chapter,minimum));
         if(!summary)missing.push(chapter.number);
       }

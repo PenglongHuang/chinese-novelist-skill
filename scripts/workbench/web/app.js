@@ -6,6 +6,7 @@ import { controls, enhanceDocument, applyTypography, readPreference, writePrefer
 const q=selector=>document.querySelector(selector);
 let snapshot={projects:[],warnings:[],version:''},current=null,requestNumber=0,controller=null,events=null,rawMode=false,refreshPromise=null;
 let restoreScroll=true;
+let catalogEpoch=0,refreshQueued=false,switchingWorkspace=false;
 const progressFilters=new Map();
 function progressPage(project){return progress(project,progressFilters.get(project.id)||'all');}
 function applyAppearance(){
@@ -115,9 +116,12 @@ function updateNavigation(project) {
   if(paging&&current?.chapterId){const chapter=project.chapters.find(c=>c.id===current.chapterId);if(chapter)paging.outerHTML=controls(project,chapter).bottom;}
 }
 async function refresh() {
-  if(refreshPromise)return refreshPromise;
-  refreshPromise=(async()=>{
+  if(switchingWorkspace){refreshQueued=true;return;}
+  if(refreshPromise){refreshQueued=true;return refreshPromise;}
+  const epoch=catalogEpoch;
+  const pending=(async()=>{
     const updated=await api('/api/projects'),rootChanged=snapshot.workspace&&updated.workspace!==snapshot.workspace;
+    if(epoch!==catalogEpoch||switchingWorkspace)return;
     if(rootChanged){saveScroll();controller?.abort();current=null;history.replaceState(null,'','#/');configurePreferenceScope(updated.workspace);progressFilters.clear();}
     snapshot=updated;workspaceInfo();
     if(snapshot.restartCommand)q('#restart-command').textContent=snapshot.restartCommand;
@@ -131,8 +135,11 @@ async function refresh() {
     if(!current?.version){await display();return;}
     const doc=current.docId==='summary-view'?{version:project.summaryVersion}:project.documents.find(d=>d.id===current.docId)||project.chapters.find(c=>c.id===current.docId);
     if(!doc||doc.version!==current.version)setReload(true);
-  })().finally(()=>refreshPromise=null);
-  return refreshPromise;
+  })().finally(()=>{
+    if(refreshPromise===pending)refreshPromise=null;
+    if(refreshQueued&&!switchingWorkspace){refreshQueued=false;refresh().catch(()=>{});}
+  });
+  refreshPromise=pending;return pending;
 }
 function connect() {
   events?.close();events=new EventSource('/api/events');
@@ -158,13 +165,15 @@ document.addEventListener('click',event=>{
   if(target.id==='retry-connection'){connect();refresh().catch(()=>{});}
 });
 q('#workspace-form').addEventListener('submit',async event=>{
-  event.preventDefault();q('#workspace-error').textContent='正在打开…';
+  event.preventDefault();if(switchingWorkspace)return;
+  switchingWorkspace=true;catalogEpoch++;q('#workspace-form button[type="submit"]').disabled=true;q('#workspace-error').textContent='正在打开…';
   try{
     const response=await fetch('/api/workspaces/open',{method:'POST',headers:{'Content-Type':'application/json','X-Workbench-Token':snapshot.sessionToken},body:JSON.stringify({path:q('#workspace-path').value.trim()})});
     const result=await response.json();if(!response.ok)throw new Error(result.error||'无法打开目录');
     saveScroll();controller?.abort();requestNumber++;current=null;progressFilters.clear();history.replaceState(null,'','#/');
     snapshot=await api('/api/projects');configurePreferenceScope(snapshot.workspace);workspaceInfo();q('#workspace-dialog').close();await display();
   }catch(error){q('#workspace-error').textContent=error.message;}
+  finally{switchingWorkspace=false;q('#workspace-form button[type="submit"]').disabled=false;refresh().catch(()=>{});}
 });
 document.addEventListener('input',event=>{
   const target=event.target;

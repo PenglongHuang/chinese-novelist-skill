@@ -8,7 +8,7 @@ export async function collectSummaries(files,read) {
     if(source.kind==='legacy'){const section=extractSection(text,['章节摘要']);if(!section.found)continue;text=section.markdown;}
     for(const item of parseChapterSummaries(text)) {
       const prior=entries.get(item.number);
-      if(prior){if(prior.kind!=='canonical'&&prior.body!==item.body)conflicts.add(item.number);continue;}
+      if(prior){if(prior.kind===source.kind&&prior.body!==item.body)conflicts.add(item.number);continue;}
       entries.set(item.number,{...item,...source});
     }
   }
@@ -21,6 +21,7 @@ export function inspectStatus(chapter,minimum) {
   if(!chapter.exists&&chapter.recordedStatus&&chapter.recordedStatus!=='pending')issues.push('计划有进度，但正文文件缺失');
   if(chapter.recordedStatus==='completed') {
     if(chapter.validatedContentHash!==chapter.actualContentHash)issues.push('正文版本未经当前完成记录确认');
+    if(chapter.summaryHash!==chapter.actualSummaryHash)issues.push('摘要版本未经当前完成记录确认');
     if(!chapter.actualWordCountPass)issues.push('字数未达到完成门槛');
     if(chapter.summarySource!=='canonical'||chapter.summaryConflict)issues.push('正式摘要未就绪');
     if(chapter.wordCount!==chapter.actualWordCount||chapter.wordCountPass!==true)issues.push('字数记录未同步');

@@ -31,9 +31,14 @@ export const tests=[
       const script=fileURLToPath(new URL('../../check_chapter_wordcount.mjs',import.meta.url));
       const single=spawnSync(process.execPath,[script,file,'--json'],{encoding:'utf8'});
       assert.equal(single.status,0);assert.equal(JSON.parse(single.stdout).results[0].word_count,3100);
+      const short=await f.write('第03章-短篇约定.md','字'.repeat(2000));
+      const custom=spawnSync(process.execPath,[script,short,'1000','--json'],{encoding:'utf8'});
+      assert.equal(custom.status,0);assert.equal(JSON.parse(custom.stdout).results[0].word_count,2000);
       await f.write('第02章-不足.md','# 第02章：不足\n短文');
       const batch=spawnSync(process.execPath,[script,'--all',f.root,'--json'],{encoding:'utf8'});
-      assert.equal(batch.status,1);assert.equal(JSON.parse(batch.stdout).summary.failed,1);
+      assert.equal(batch.status,1);assert.equal(JSON.parse(batch.stdout).summary.failed,2);
+      const customBatch=spawnSync(process.execPath,[script,'--all',f.root,'1000','--json'],{encoding:'utf8'});
+      assert.equal(customBatch.status,1);assert.equal(JSON.parse(customBatch.stdout).summary.failed,1);
     } finally {await f.close();}
   }],
 ];

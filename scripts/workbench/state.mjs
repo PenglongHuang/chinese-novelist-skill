@@ -48,11 +48,11 @@ export async function reconcileProject(project,{apply=false}={}){return locked(p
   if(apply){
     backup=path.join(root,'.state-backups',Date.now()+'-'+randomUUID());await fs.mkdir(backup,{recursive:true});
     for(const file of ['02-写作计划.json','99-章节摘要.md']){try{const text=await ctx.read(file);await fs.writeFile(path.join(backup,file),text);}catch(error){if(error.code!=='ENOENT')throw error;}}
-    const merged=[...ctx.summaries.entries.values()].filter(e=>!ctx.summaries.conflicts.has(e.number)).sort((a,b)=>a.number-b.number);
-    // Existing canonical summaries stay authoritative; conflict entries are never overwritten by batch output.
-    for(const number of conflicts){const entry=ctx.summaries.entries.get(number);if(entry?.kind==='canonical')merged.push(entry);}
-    merged.sort((a,b)=>a.number-b.number);
-    if(merged.length)await atomic(path.join(root,'99-章节摘要.md'),'# 章节摘要\n\n'+merged.map(e=>e.markdown).join('\n\n')+'\n');
+    const additions=[...ctx.summaries.entries.values()].filter(e=>e.kind!=='canonical'&&!ctx.summaries.conflicts.has(e.number)).sort((a,b)=>a.number-b.number);
+    if(additions.length){
+      let original='# 章节摘要';try{original=await ctx.read('99-章节摘要.md');}catch(error){if(error.code!=='ENOENT')throw error;}
+      await atomic(path.join(root,'99-章节摘要.md'),original.trimEnd()+'\n\n'+additions.map(e=>e.markdown).join('\n\n')+'\n');
+    }
     ctx.summaries=await collectSummaries(await fs.readdir(root),ctx.read);
   }
   for(const chapter of ctx.plan.chapters){
@@ -62,7 +62,7 @@ export async function reconcileProject(project,{apply=false}={}){return locked(p
       Object.assign(chapter,info);
       if(chapter.status==='completed'&&(!info.wordCountPass||!info.summaryPass||changed))chapter.status='validating';
       if(!chapter.status||chapter.status==='pending')chapter.status='validating';
-      if(!info.wordCountPass||!info.summaryPass)issues.push(chapter.chapterNumber);
+      if(!info.wordCountPass||!info.summaryPass||chapter.status==='failed')issues.push(chapter.chapterNumber);
     }catch{issues.push(chapter.chapterNumber);if(chapter.status!=='pending')chapter.status='failed';}
   }
   ctx.plan.status=ctx.plan.chapters.length&&ctx.plan.chapters.every(c=>c.status==='completed')?'completed':issues.length?'needs_attention':'validating';

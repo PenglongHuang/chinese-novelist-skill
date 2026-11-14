@@ -10,7 +10,7 @@
 
 ### 1. 初始化校验
 
-读取 `02-写作计划.json`，将项目 `status` 更新为 `"validating"`。
+读取 `02-写作计划.json`，取 `minWordsPerChapter` 作为校验下限（旧项目缺省 3000）。运行 chapter-state.mjs --reconcile --apply 同步校验状态，禁止缓存旧 JSON 后整体覆写。
 
 > 若为子Agent并行/Teams 模式，先确认各批次的状态与章节摘要已合并回 `02-写作计划.json` 和 `99-章节摘要.md`（未合并则先合并），并对每个批次接缝做衔接检查。
 
@@ -21,9 +21,9 @@
 1. **文件存在性**：检查 `filePath` 指定的文件是否存在
 2. **字数检查**：使用脚本批量检查（`{skillBaseDir}` 为 skill 安装根目录，见 [shared-infrastructure.md](shared-infrastructure.md)）：
    ```bash
-   node {skillBaseDir}/scripts/check_chapter_wordcount.mjs --all <项目文件夹路径> --json
+   node {skillBaseDir}/scripts/check_chapter_wordcount.mjs --all <项目文件夹路径> <minWordsPerChapter> --json
    ```
-   退出码：0=全部达标，1=有不达标，2=错误。从 `--json` 输出的 `results[]` 读取各章 `word_count` 与 `status`
+   将 `<minWordsPerChapter>` 替换为本书下限数值。退出码：0=全部达标，1=有不达标，2=错误。从 `--json` 输出的 `results[]` 读取各章 `word_count` 与 `status`
 3. **同步收尾**：运行 chapter-state.mjs --reconcile --apply 汇总已有摘要和实测计数；缺摘要或冲突先核对正文处理。逐章提交 completed，由脚本验证门槛并回填记录。
 
 ### 3. 汇总结果
@@ -35,10 +35,10 @@
 
 对每个不通过的章节：
 
-1. 将 `status` 设为 `"failed"`，`retryCount` 加 1
+1. 通过 chapter-state.mjs 提交 `failed`，由脚本将 `retryCount` 加 1
 2. 回到第三阶段对该章节执行逐章创作流程（写前分析→撰写→润色→收尾）
 3. 重写完成后重新检查字数
-4. 更新 `02-写作计划.json`
+4. 通过 chapter-state.mjs 提交本章状态与校验记录
 
 循环规则：
 - 最多执行 **3轮** 校验-修复循环
@@ -47,7 +47,7 @@
 
 ### 5. 完成报告
 
-向用户展示创作完成总结：
+全部通过时，向用户展示创作完成总结；仍有失败项时报告“校验待处理”，列出缺项，不宣称创作完成：
 
 ```
 📊 《[小说名称]》创作完成
@@ -66,5 +66,5 @@
 
 如有不合格章节（超过3次重写仍未通过），在报告中标注：
 ```
-⚠️ 第X章：字数不足（[实际字数]/3000），已重试3次
+⚠️ 第X章：字数不足（[实际字数]/[本书 minWordsPerChapter]），已重试3次
 ```

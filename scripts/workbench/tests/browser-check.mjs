@@ -8,6 +8,8 @@ import { fixture } from './helpers.mjs';
 import { startWorkbench } from '../server.mjs';
 
 const require=createRequire(import.meta.url);
+// Keep Chrome's disposable profile with the other test artifacts when configured.
+if(process.env.WORKBENCH_TEST_TEMP){await fs.mkdir(process.env.WORKBENCH_TEST_TEMP,{recursive:true});process.env.TEMP=process.env.TMP=process.env.TMPDIR=process.env.WORKBENCH_TEST_TEMP;}
 const playwright=process.env.WORKBENCH_PLAYWRIGHT_MODULE
   ? await import(pathToFileURL(process.env.WORKBENCH_PLAYWRIGHT_MODULE).href)
   : require('playwright');
@@ -95,8 +97,19 @@ try {
   await f.write('other/.chinese-novelist/新书/第01章-新章.md','# 新章\n新的工作区');
   await page.locator('#open-workspace').click();await page.locator('#workspace-path').fill(f.root+'/missing');await page.locator('#workspace-form button[type="submit"]').click();
   await page.waitForFunction(()=>document.querySelector('#workspace-error')?.textContent.includes('不存在'));
+  let releaseOld,oldCaptured,holdNext=true;
+  const captured=new Promise(resolve=>oldCaptured=resolve),held=new Promise(resolve=>releaseOld=resolve);
+  await page.route('**/api/projects',async route=>{
+    if(!holdNext){await route.continue();return;}holdNext=false;
+    const response=await route.fetch();oldCaptured();await held;await route.fulfill({response});
+  });
+  await f.write('作品 一/第01章-最后一班车.md',template+'\n一次新的变更');
+  await captured;
   await page.locator('#workspace-path').fill(f.root+'/other/.chinese-novelist');await page.locator('#workspace-form button[type="submit"]').click();
   await page.waitForFunction(()=>document.querySelector('.book-link')?.textContent.includes('新书'));
+  releaseOld();await page.waitForTimeout(250);
+  assert((await page.locator('#workspace-label').innerText()).includes('.chinese-novelist'),'a delayed old refresh must not overwrite the selected workspace');
+  await page.unroute('**/api/projects');
   await page.locator('#open-workspace').click();await page.locator('#workspace-path').fill(f.root);await page.locator('#workspace-form button[type="submit"]').click();
   await page.waitForFunction(()=>document.querySelectorAll('.book-link').length===2);
   await page.goto(service.url+`#/projects/${p.id}/outline`);await page.waitForSelector('.markdown');

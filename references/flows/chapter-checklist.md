@@ -25,7 +25,7 @@
 
 7. **创建章节文件** — 文件名格式：`第{XX}章-{章节标题}.md`（标题来自 `02-写作计划.json` 中的 `title` 字段），使用 [chapter-template.md](../guides/chapter-template.md) 模板
 8. **撰写章首引子** — 按大纲中本章的章首引子类型，参考 [hook-techniques.md](../guides/hook-techniques.md)「章首引子七式」，创作 50-150 字的引子文字
-9. **撰写正文** — **每章必须达到 3000-5000 字**，硬性要求：
+9. **撰写正文** — 按本书约定的目标字数创作（默认 3000–5000 字），最低门槛取写作计划的 `minWordsPerChapter`（旧项目未设置时默认 3000），硬性要求：
    - 正文开头：承接上一章的情境，尽早给出值得关注的处境或问题；可参考 [chapter-guide.md](../guides/chapter-guide.md) 的开头技巧，不为套用技巧另造危机
    - 张力节奏：张力强度与章节用途匹配，允许人物消化后果和关系沉淀；停滞时先检查人物是否仍有目标与牵挂，不按固定字数插入冲突（参考 [hook-techniques.md](../guides/hook-techniques.md) 悬念强度等级）
    - 对话要求：对话比例服从场景需要，一段对话应推动事件、表现人物或影响关系；直说与潜台词按人物目的和处境选择（参考 [dialogue-writing.md](../guides/dialogue-writing.md)）
@@ -53,12 +53,12 @@
 14. **字数检查** — 必须使用脚本检查：
 
     ```bash
-    node {skillBaseDir}/scripts/check_chapter_wordcount.mjs <章节文件路径> --json
+    node {skillBaseDir}/scripts/check_chapter_wordcount.mjs <章节文件路径> <minWordsPerChapter> --json
     ```
 
     退出码：0=达标，1=不足，2=错误。优先解析 `--json` 输出中的 `word_count` 填入写作计划，不要解析文本报告
 
-    低于 3000 字 → 使用 [content-expansion.md](../guides/content-expansion.md) 扩充后复检，直至达标（不得注水）
+    `<minWordsPerChapter>` 替换为本书计划中的数值（缺省 3000）。低于该门槛 → 使用 [content-expansion.md](../guides/content-expansion.md) 扩充后复检，直至达标（不得注水）
 
 ---
 

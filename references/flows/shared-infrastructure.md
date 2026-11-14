@@ -119,16 +119,18 @@
 
 ```bash
 # 检查单个章节（--json 输出机读结果，含 word_count 与达标状态）
-node {skillBaseDir}/scripts/check_chapter_wordcount.mjs ./chinese-novelist/项目文件夹/第01章.md --json
+node {skillBaseDir}/scripts/check_chapter_wordcount.mjs ./chinese-novelist/项目文件夹/第01章.md <minWordsPerChapter> --json
 
 # 检查所有章节（按章号数值排序，第10章不会排在第2章前面）
-node {skillBaseDir}/scripts/check_chapter_wordcount.mjs --all ./chinese-novelist/项目文件夹/ --json
+node {skillBaseDir}/scripts/check_chapter_wordcount.mjs --all ./chinese-novelist/项目文件夹/ <minWordsPerChapter> --json
 
 # 自定义最小字数
 node {skillBaseDir}/scripts/check_chapter_wordcount.mjs ./chinese-novelist/项目文件夹/第01章.md 3500 --json
 ```
 
 ### 环境要求与降级
+
+`<minWordsPerChapter>` 必须替换为本书 `02-写作计划.json` 中的数值，未设置时为 3000；单章、批量与状态脚本统一使用这个下限。
 
 脚本依赖 Node（≥16；`npx skills add` 安装本 skill 的用户必然已满足）。若调用报 `node: command not found`（Windows 为「'node' 不是内部或外部命令」）：
 
@@ -150,7 +152,7 @@ Agent 优先用 `--json` + 退出码判断结果：`results[].word_count` 可直
 
 | 阶段 | 用途 |
 |------|------|
-| Phase 3（逐章创作） | 撰写后检查单章字数，低于3000字必须扩充 |
+| Phase 3（逐章创作） | 撰写后按本书 minWordsPerChapter 检查单章字数，不足时扩充 |
 | Phase 4（自动校验） | 批量检查所有章节字数，不合格章节自动重写 |
 
-低于3000字的章节必须使用 [content-expansion.md](../guides/content-expansion.md) 的扩充技巧进行扩充。
+低于本书字数下限的章节必须使用 [content-expansion.md](../guides/content-expansion.md) 的扩充技巧进行扩充。
