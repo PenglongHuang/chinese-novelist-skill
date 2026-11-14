@@ -25,6 +25,10 @@ metadata:
 
 进入每个阶段时，先阅读对应的流程文档以获取详细执行指令。
 
+### 只读工作台入口
+
+用户要求查看已有小说、打开小说书房或浏览工作台时，优先执行 [workbench.md](references/flows/workbench.md)，直接浏览指定作品目录，不进入创作问答，不创建作品或写入偏好。工作台只读展示已有产物，不支持编辑、批注待办或 Agent 通信。
+
 ### 第0步：初始化与偏好加载
 
 读取用户偏好，检测未完成项目（中断续写），展示个性化欢迎。 → 详见 [phase0-initialization.md](references/flows/phase0-initialization.md)

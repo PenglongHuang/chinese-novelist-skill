@@ -2,6 +2,8 @@
 
 **每次触发SKILL时首先执行：**
 
+**只读浏览分流**：如果用户只是要求查看已有小说、打开工作台或小说书房，直接执行 [workbench.md](workbench.md)，跳过以下偏好和创作流程，不修改 `user-preferences.json`。启动脚本使用 skill 安装目录绝对路径，作品集合默认取当前工作目录下的 `chinese-novelist/`；只有用户另行提出创作或续写时才进入正常流程。
+
 ## 1. 读取用户偏好
 
 检查 `user-preferences.json` 是否存在

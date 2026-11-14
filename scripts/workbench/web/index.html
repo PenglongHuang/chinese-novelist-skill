@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light dark"><title>小说书房 · Chinese Novelist</title>
+  <link rel="icon" href="data:,"><link rel="stylesheet" href="/styles.css">
+  <script defer src="/vendor/markdown-it.min.js"></script><script defer src="/vendor/purify.min.js"></script>
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <header class="site-header"><a class="brand" href="#/">Chinese Novelist</a><span id="work-separator" hidden>/</span><button id="book-switch" hidden aria-expanded="false" aria-controls="book-menu"></button><span class="grow"></span><span id="connection" role="status" aria-live="polite">正在连接</span><a id="shelf-link" href="#/" hidden>全部作品</a></header>
+  <section id="book-menu" class="book-menu" aria-label="切换作品" hidden></section>
+  <nav id="navigation" class="navigation" aria-label="作品资料" hidden></nav>
+  <div id="project-notices" class="project-notices" role="status"></div>
+  <main id="content"><p class="empty">正在读取工作区…</p></main>
+  <div id="doc-updated" class="update-toast" hidden role="status">此文档已更新 <button id="reload-document">点击载入</button></div>
+  <section id="connection-help" class="connection-help" hidden><p>连接已断开。服务仍在运行时将自动重连；服务已停止时，请在终端重新启动。</p><code id="restart-command"></code><button id="retry-connection">重试连接</button></section>
+  <footer class="site-footer"><span>小说书房 / 本地只读</span><span id="source-label">内容来自工作区文件</span></footer>
+</body>
+</html>

@@ -25,12 +25,33 @@
 - **多种写作模式** - 串行 / 子Agent并行 / Agent Teams，按需选择
 - **检查与润色** - 逐章审读连贯性与表达，脚本检查字数，不达标时修复
 - **章节衔接** - 记录人物处境与事件后果，承接未解悬念
+- **本地小说书房** - 用“细线书页”界面浏览多部小说的大纲、人物、设定、文风、摘要、进度和正文，随文件变化更新
 
 ## 🚀 快速开始
 
 安装 Skill：`npx skills add PenglongHuang/chinese-novelist-skill`
 
 装好后，说一句：`使用 chinese-novelist 帮我写一部小说`
+
+### 打开已有作品的小说书房
+
+在 Agent 中说：`打开 chinese-novelist 小说书房，查看当前工作区已有作品`。
+
+也可以直接运行（将路径换成实际安装目录和作品目录）：
+
+```bash
+node "/绝对路径/chinese-novelist-skill/scripts/workbench.mjs" --workspace "/绝对路径/我的作品/chinese-novelist"
+```
+
+打开终端打印的本地地址。`--workspace` 支持多部小说的集合目录，也支持单部小说目录；`--port 3210` 可指定端口，省略时分配可用端口。按 Ctrl+C 停止服务。
+
+需要 Node.js >=16；无需安装网站依赖、构建或配置模型 Key，运行时不依赖外部 CDN。书房只读，不修改小说文件，不提供编辑、待办或 Agent 通信。
+
+正文可切换阅读稿与完整原文件，支持目录、字号、行距和章节翻页。文件变化后，书架与章节目录自动更新；当前文档提示点击载入，避免打断阅读。计划中的字数和完成状态会注明来源，不等于重新校验或作者审定。
+
+断线后可使用页面给出的同端口命令重启；服务是否能在 Agent 结束后继续运行，取决于宿主的后台进程机制。详细说明见 [工作台使用流程](references/flows/workbench.md)。
+
+开发验证：`node scripts/workbench/tests/run.mjs`。浏览器回归另需开发环境中的 Playwright 与 Chrome：`node scripts/workbench/tests/browser-check.mjs`；已有独立安装时设置 `WORKBENCH_PLAYWRIGHT_MODULE` 为 Playwright 的 `index.mjs` 绝对路径。第三方浏览器资产与许可见 [THIRD_PARTY.md](scripts/workbench/THIRD_PARTY.md)。
 
 ## 赞助商
 

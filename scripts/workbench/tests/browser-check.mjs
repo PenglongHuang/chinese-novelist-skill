@@ -1,0 +1,90 @@
+// Development-only: WORKBENCH_PLAYWRIGHT_MODULE can point to an existing Playwright installation.
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { createRequire } from 'node:module';
+import { fixture } from './helpers.mjs';
+import { startWorkbench } from '../server.mjs';
+
+const require=createRequire(import.meta.url);
+const playwright=process.env.WORKBENCH_PLAYWRIGHT_MODULE
+  ? await import(pathToFileURL(process.env.WORKBENCH_PLAYWRIGHT_MODULE).href)
+  : require('playwright');
+const f=await fixture();let service,browser;
+try {
+  const body=Array.from({length:80},(_,i)=>`他把车票翻过来，第${i+1}道折痕里仍留着一点潮气。那个人没有回答。他站在原地，等脚步声从走廊尽头传来。`).join('\n\n');
+  const template='# 第01章：最后一班车\n\n## 本章概要\n不可出现在阅读稿的概要\n\n---\n## 章首引子\n> 车票背面写着他的名字。\n\n---\n## 正文\n'+body+'\n\n![本地图片](lamp.png)\n\n![远程图片](https://example.invalid/tracker.png)\n\n<script>window.workbenchInjected=true</script>\n\n<img src=x onerror="window.workbenchInjected=true">\n\n[危险链接](javascript:alert(1))\n\n## 章节备注\n不可出现在阅读稿的备注';
+  await f.write('作品 一/第01章-最后一班车.md',template);
+  await f.write('作品 一/第02章-空座.md','# 第02章：空座\n\n雨衣留在座位上，妹妹不见了。');
+  await f.write('作品 一/00-人物档案.md','# 人物档案\n## 陈渡\n列车员，害怕面对旧事。');
+  await f.write('作品 一/01-大纲.md','# 最后一班列车 大纲\n- **题材**：悬疑\n## 章节规划\n|章节|事件|\n|---|---|\n|第1章|重逢|\n## 设定与事实词典\n钥匙归属：哥哥\n## 章节摘要\n### 第1章\n妹妹归来。');
+  await f.write('作品 一/02-写作计划.json',{novelName:'最后一班列车',totalChapters:3,status:'in_progress',chapters:[{chapterNumber:1,title:'最后一班车',filePath:'第01章-最后一班车.md',status:'completed',wordCount:3200,wordCountPass:true},{chapterNumber:2,title:'空座',filePath:'第02章-空座.md',status:'completed',wordCount:3000},{chapterNumber:3,title:'未生成',filePath:'第03章-未生成.md',status:'pending'}]});
+  await f.write('同名作品/02-写作计划.json',{novelName:'最后一班列车',totalChapters:1,chapters:[]});
+  const image=path.join(f.root,'作品 一/lamp.png');await fs.writeFile(image,Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6b0UAAAAASUVORK5CYII=','base64'));
+  service=await startWorkbench({workspace:f.root,intervalMs:100});
+  browser=await playwright.chromium.launch({channel:process.env.WORKBENCH_BROWSER||'chrome',headless:true});
+  const page=await browser.newPage({viewport:{width:1440,height:950}});
+  const errors=[],external=[];
+  page.on('pageerror',e=>errors.push(e.message));
+  page.on('request',r=>{if(!r.url().startsWith(service.url))external.push(r.url());});
+  await page.goto(service.url);await page.waitForSelector('.book-link',{timeout:4000});
+  assert.equal(await page.locator('.book-link').count(),2);
+  if(process.env.WORKBENCH_SCREENSHOT)await page.screenshot({path:process.env.WORKBENCH_SCREENSHOT.replace(/\.png$/,'.shelf.png'),fullPage:true});
+  const p=service.catalog.listProjects().find(p=>p.directoryName==='作品 一');
+  await page.goto(service.url+`#/projects/${p.id}/read/${p.chapters[0].id}`);
+  await page.waitForSelector('.markdown h1');
+  if(process.env.WORKBENCH_SCREENSHOT)await page.screenshot({path:process.env.WORKBENCH_SCREENSHOT.replace(/\.png$/,'.reader.png')});
+  assert(!(await page.locator('.markdown').innerText()).includes('不可出现在阅读稿的概要'));
+  assert(!(await page.locator('.markdown').innerText()).includes('不可出现在阅读稿的备注'));
+  assert.equal(await page.evaluate(()=>window.workbenchInjected),undefined);
+  assert.equal(await page.locator('.markdown img').count(),1);
+  await page.locator('.markdown img').evaluate(e=>e.scrollIntoView());
+  await page.waitForFunction(()=>document.querySelector('.markdown img')?.naturalWidth>0);
+  assert(await page.locator('.markdown img').evaluate(e=>e.complete&&e.naturalWidth>0));
+  assert.equal(external.length,0);
+  await page.locator('#source-toggle').click();
+  await page.waitForFunction(()=>document.querySelector('.markdown')?.textContent.includes('不可出现在阅读稿的概要'));
+  assert((await page.locator('.markdown').innerText()).includes('不可出现在阅读稿的概要'));
+  await page.locator('#source-toggle').click();
+  await page.waitForFunction(()=>!document.querySelector('.markdown')?.textContent.includes('不可出现在阅读稿的概要'));
+  await page.locator('#settings-toggle').click();await page.locator('#font-size').fill('20');await page.locator('#font-size').dispatchEvent('input');
+  assert.equal(await page.locator('.markdown').evaluate(e=>getComputedStyle(e).fontSize),'20px');
+  await page.locator('#settings-toggle').click();
+  await page.locator('#next-chapter').click();await page.waitForFunction(()=>document.querySelector('.markdown')?.textContent.includes('妹妹不见了'));
+  await page.goBack();await page.waitForFunction(()=>document.querySelector('.markdown')?.textContent.includes('车票背面'));
+  const current=page.url();await page.reload();await page.waitForSelector('.markdown h1');assert.equal(page.url(),current);
+  console.log('PASS browser shelf, direct route, history, reading/source mode, safe Markdown and controls');
+  await page.evaluate(()=>scrollTo(0,800));const y=await page.evaluate(()=>scrollY);
+  await f.write('作品 一/第01章-最后一班车.md',template.replace('车票背面写着他的名字。','新的引子已写入。'));
+  await page.waitForSelector('#doc-updated:not([hidden])');
+  assert.equal(await page.evaluate(()=>scrollY),y);
+  assert(!(await page.locator('.markdown').innerText()).includes('新的引子已写入'));
+  await page.locator('#reload-document').click();await page.waitForFunction(()=>document.querySelector('.markdown')?.textContent.includes('新的引子已写入'));
+  await f.write('作品 一/第10章-额外.md','新增正文');
+  await page.waitForFunction(()=>document.querySelector('#chapter-picker')?.textContent.includes('额外'));
+  console.log('PASS current document stays stable until explicit reload; new chapters update navigation');
+  await page.locator('[data-view="style"]').click();await page.waitForFunction(()=>document.querySelector('#content')?.textContent.includes('资料尚未生成'));
+  await page.locator('[data-view="summaries"]').click();await page.waitForFunction(()=>document.querySelector('.markdown')?.textContent.includes('妹妹归来'));
+  await page.locator('[data-view="progress"]').click();await page.waitForFunction(()=>document.querySelector('#content')?.textContent.includes('计划标记已完成'));
+  assert((await page.locator('#content').innerText()).includes('正文未生成'));
+  await page.locator('[data-view="read"]').click();await page.waitForSelector('.markdown h1');
+  assert(page.url().includes('/read/'),'default reader route includes the selected chapter');
+  await page.locator('[data-view="outline"]').click();await page.waitForSelector('.markdown table');
+  for(const width of [1440,1024,736,390]) {
+    await page.setViewportSize({width,height:950});
+    assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`no overflow at ${width}`);
+  }
+  await page.emulateMedia({colorScheme:'dark'});
+  if(process.env.WORKBENCH_SCREENSHOT)await page.screenshot({path:process.env.WORKBENCH_SCREENSHOT,fullPage:true});
+  assert.deepEqual(errors,[]);
+  await fs.rm(path.join(f.root,'作品 一'),{recursive:true});
+  await page.waitForFunction(()=>document.querySelector('#content')?.textContent.includes('作品不存在'));
+  console.log('PASS missing documents, legacy summary, truthful progress, responsive layout and deleted project');
+  const port=Number(new URL(service.url).port);await service.close();
+  await page.waitForFunction(()=>document.querySelector('#connection')?.textContent.includes('连接已断开'));
+  service=await startWorkbench({workspace:f.root,port,intervalMs:100});
+  await page.waitForFunction(()=>document.querySelector('#connection')?.textContent.includes('已连接'),{timeout:10000});
+  console.log('PASS reconnect after service restart');
+  console.log('Browser checks passed, 0 page errors, 0 external requests.');
+} finally {if(browser)await browser.close();if(service)await service.close();await f.close();}

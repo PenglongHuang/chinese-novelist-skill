@@ -2,6 +2,10 @@
 
 本文件定义跨阶段共享的机制和规则。
 
+## 本地只读小说书房
+
+启动命令为 `node "{skillBaseDir}/scripts/workbench.mjs" --workspace "{作品集合目录绝对路径}"`。`{skillBaseDir}` 是本 skill 安装目录，不是用户工作目录。工作区默认是当前工作目录下的 `chinese-novelist/`，也可显式指定单部小说目录。启动和浏览不修改偏好、计划或正文，也不代表确认开写。详细启动、生命周期与错误处理见 [workbench.md](workbench.md)。
+
 ---
 
 ## 三大黄金法则
