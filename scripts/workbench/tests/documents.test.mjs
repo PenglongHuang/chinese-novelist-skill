@@ -2,6 +2,11 @@ import assert from 'node:assert/strict';
 import { extractReadingContent, extractSection, parseChapterSummaries } from '../web/documents.js';
 
 export const tests = [
+  ['chapter headings need only summary paragraphs without fixed fields',()=>{
+    assert.deepEqual(parseChapterSummaries('# 章节摘要\n\n## 第01章 归家\n\n## 第02章 修伞\n'),[]);
+    const result=parseChapterSummaries('# 章节摘要\n\n## 第01章 归家\n\n她留下家门钥匙，决定回来修屋顶。\n\n母亲仍不知道她已离职。\n\n## 第02章 修伞\n');
+    assert.equal(result.length,1);assert.equal(result[0].number,1);assert(!result[0].body.includes('###'));
+  }],
   ['incomplete structured summaries, common placeholders and commented chapters remain invalid',()=>{
     const invalid=[
       '## 第01章\n### 人物当前处境\n母亲不知道他已离职。\n### 行动条件与未了事项',

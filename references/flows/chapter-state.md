@@ -22,7 +22,7 @@ node "{skillBaseDir}/scripts/chapter-state.mjs" --project "{projectPath}" --chap
 
 ## 摘要与并行收尾
 
-规划时按 [summary-template.md](../guides/summary-template.md) 预建全部章节框架，每章收尾在原小节填写。字段标题、注释和占位不算摘要；结构化摘要须有“关键事件与后果”正文。旧版叙述摘要仍可读取，无须批量重写。
+规划时按 [summary-template.md](../guides/summary-template.md) 预建全部章节标题，每章收尾在标题下填写摘要段落，不要求固定分栏。空标题、注释和占位不算摘要。已有叙述或分栏摘要继续可读，无须批量重写。
 
 若宿主编辑冲突迫使子 Agent 输出 `_batchN-summaries.md`，使用相同格式并报告未汇总，章节停留 validating。主 Agent 在所有批次返回后汇总、核对覆盖与冲突，再完成逐章提交；脚本填入对应空小节，不覆盖已有有效正式摘要。
 
