@@ -2,6 +2,17 @@ import assert from 'node:assert/strict';
 import { extractReadingContent, extractSection, parseChapterSummaries } from '../web/documents.js';
 
 export const tests = [
+  ['incomplete structured summaries, common placeholders and commented chapters remain invalid',()=>{
+    const invalid=[
+      '## 第01章\n### 人物当前处境\n母亲不知道他已离职。\n### 行动条件与未了事项',
+      '## 第01章\n### 关键事件与后果\n待补充本章摘要\n### 人物当前处境',
+      '## 第01章\n### 关键事件与后果\n```markdown\n```\n### 人物当前处境',
+      '## 第01章\n<!--\n## 第02章\n她离开了。\n-->',
+    ];
+    for(const text of invalid)assert.deepEqual(parseChapterSummaries(text),[],text);
+    assert.equal(extractSection('# 资料\n<!--\n## 设定词典\n假设定\n-->\n## 正文\n真正文',['设定词典']).found,false);
+    assert.equal(extractSection('```md\n<!--\n```\n## 设定词典\n真实词典',['设定词典']).found,true);
+  }],
   ['summary shells and placeholder prose do not count as completed summaries',()=>{
     const shell='## 第01章 归家\n\n### 关键事件与后果\n\n### 人物当前处境\n\n### 行动条件与未了事项\n';
     assert.deepEqual(parseChapterSummaries(shell),[]);

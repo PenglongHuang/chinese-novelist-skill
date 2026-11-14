@@ -4,9 +4,18 @@ import { fixture } from './helpers.mjs';
 import { updateChapter, reconcileProject } from '../state.mjs';
 
 export const tests=[
+  ['completion rejects missing events, unbracketed placeholder, empty fence and commented chapters',async()=>{
+    const f=await fixture();try{
+      await f.write('02-写作计划.json',{minWordsPerChapter:1,chapters:[{chapterNumber:1,filePath:'第01章.md',status:'validating'}]});await f.write('第01章.md','真实正文');
+      for(const body of ['### 人物当前处境\n她尚未知道真相。','### 关键事件与后果\n待补充本章摘要','### 关键事件与后果\n```markdown\n```','<!--\n## 第02章\n她离开了。\n-->']){
+        await f.write('99-章节摘要.md','## 第01章\n'+body);await assert.rejects(updateChapter(f.root,1,'completed'),body);
+      }
+    }finally{await f.close();}
+  }],
   ['empty summary shells block completion and batch merge fills only the matching shell',async()=>{
     const f=await fixture();try{
-      const shell='## 第02章 修伞\r\n\r\n### 关键事件与后果\r\n\r\n### 人物当前处境\r\n\r\n### 行动条件与未了事项\r\n\r\n';
+      const notes='### 作者备注\r\n请保留这里的写作说明\r\n<!-- 编辑提示：不要覆盖作者备注 -->\r\n\r\n';
+      const shell='## 第02章 修伞\r\n\r\n### 关键事件与后果\r\n<!-- 先核对修伞场景 -->\r\n\r\n### 人物当前处境\r\n\r\n### 行动条件与未了事项\r\n\r\n'+notes;
       const prefix='# 摘要\r\n保留作者说明\r\n\r\n## 第01章 归家\r\n母亲将钥匙交给她。\r\n\r\n',suffix='## 第03章 放晴\r\n她归还修好的伞。\r\n\r\n## 全书交接\r\n保留收尾说明\r\n';
       const original=prefix+shell+suffix;
       await f.write('02-写作计划.json',{minWordsPerChapter:1,chapters:[{chapterNumber:2,title:'修伞',filePath:'第02章.md',status:'validating'}]});await f.write('第02章.md','修好旧伞');await f.write('99-章节摘要.md',original);
@@ -16,6 +25,7 @@ export const tests=[
       await reconcileProject(f.root,{apply:true});
       const merged=await fs.readFile(f.root+'/99-章节摘要.md','utf8');
       assert.equal((merged.match(/^## 第0?2章/gm)||[]).length,1);assert(merged.startsWith(prefix));assert(merged.endsWith(suffix));assert(merged.includes('## 第02章 修伞'));assert(merged.includes('她修好母亲的旧伞'));
+      assert(merged.includes(notes));assert(merged.includes('<!-- 先核对修伞场景 -->'));
       await updateChapter(f.root,2,'completed');
       await reconcileProject(f.root,{apply:true});assert.equal(await fs.readFile(f.root+'/99-章节摘要.md','utf8'),merged);
     }finally{await f.close();}
