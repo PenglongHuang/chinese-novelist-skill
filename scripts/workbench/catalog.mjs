@@ -1,6 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { idFor, safeFile, versionFor } from './paths.mjs';
+import { countNarrative } from './web/documents.js';
+import { collectSummaries, inspectStatus } from './inspection.mjs';
 
 const artifacts = {
   people: '00-人物档案.md', outline: '01-大纲.md', plan: '02-写作计划.json',
@@ -21,6 +23,7 @@ export async function createCatalog(workspacePath) {
   const workspace = path.resolve(workspacePath);
   let projects = new Map(), resources = new Map(), version = '', warnings = [], queue = Promise.resolve();
   const plans = new Map(), planMissing = new Map(), contentCache = new Map();
+  const observations=new Map(),summaryViews=new Map();
 
   async function entries(directory) {
     try { return await fs.readdir(directory, { withFileTypes: true }); }
@@ -55,6 +58,15 @@ export async function createCatalog(workspacePath) {
         return resource;
       }
       for (const [kind, file] of Object.entries(artifacts)) docs.push(await register(file, kind, kind));
+      for(const entry of list)if(entry.isFile()&&/^_batch\d+-summaries\.md$/.test(entry.name))await register(entry.name,'batch');
+      async function observed(file) {
+        const key=`${id}/${file}`,resource=[...nextResources.values()].find(r=>r.directory===directory&&r.fileName===file);
+        if(!resource?.exists)throw errorWith('文件不存在',404);
+        const cached=observations.get(key);
+        if(cached?.version===resource.version)return cached;
+        const info=await safeFile(workspace,directory,file),text=await fs.readFile(info.path,'utf8');
+        const value={text,contentHash:idFor(text),version:resource.version,...countNarrative(text)};observations.set(key,value);return value;
+      }
       let plan = null;
       const planDoc = docs.find(d => d.kind === 'plan');
       if (planDoc.exists) {
@@ -79,7 +91,7 @@ export async function createCatalog(workspacePath) {
         if (!item || typeof item !== 'object') continue;
         const fileName = typeof item.filePath === 'string' ? item.filePath : `第${item.chapterNumber}章.md`;
         const resource = await register(fileName, 'chapter'); seen.add(fileName);
-        chapters.push({ ...resource, number: count(item.chapterNumber), title: String(item.title || fileName), recordedStatus: typeof item.status === 'string' ? item.status : null, wordCount: count(item.wordCount), wordCountPass: typeof item.wordCountPass === 'boolean' ? item.wordCountPass : null, unplanned: false });
+        chapters.push({ ...resource, number: count(item.chapterNumber), title: String(item.title || fileName), recordedStatus: typeof item.status === 'string' ? item.status : null, wordCount: count(item.wordCount), wordCountPass: typeof item.wordCountPass === 'boolean' ? item.wordCountPass : null, validatedContentHash:item.validatedContentHash||null, unplanned: false });
       }
       for (const entry of list) {
         const match = chapterPattern.exec(entry.name);
@@ -88,6 +100,19 @@ export async function createCatalog(workspacePath) {
         chapters.push({ ...resource, number: Number(match[1]), title: entry.name.replace(/^第\d+章[-：:]?/, '').replace(/\.md$/, ''), recordedStatus: null, wordCount: null, wordCountPass: null, unplanned: true });
       }
       chapters.sort((a, b) => (a.number ?? Infinity) - (b.number ?? Infinity) || a.fileName.localeCompare(b.fileName, 'zh-CN'));
+      const minimum=Number.isInteger(plan?.minWordsPerChapter)&&plan.minWordsPerChapter>0?plan.minWordsPerChapter:3000;
+      const summaries=await collectSummaries(list.map(e=>e.name),async file=>(await observed(file)).text);
+      const missing=[];
+      for(const chapter of chapters){
+        let actual=null,actualContentHash=null;try{const observation=await observed(chapter.fileName);actual=observation.wordCount;actualContentHash=observation.contentHash;}catch{}
+        const summary=summaries.entries.get(chapter.number);
+        Object.assign(chapter,{actualWordCount:actual,actualContentHash,actualWordCountPass:actual===null?null:actual>=minimum,minWords:minimum,summarySource:summary?.kind||'missing',summaryFile:summary?.name||null,summaryConflict:summaries.conflicts.has(chapter.number)});
+        Object.assign(chapter,inspectStatus(chapter,minimum));
+        if(!summary)missing.push(chapter.number);
+      }
+      const summaryText='# 章节摘要\n\n'+[...summaries.entries.values()].sort((a,b)=>a.number-b.number).map(entry=>`${entry.markdown.split('\n')[0]}\n\n> 来源：${entry.name}${entry.kind==='batch'?'（未汇总）':entry.kind==='legacy'?'（旧版大纲）':''}${summaries.conflicts.has(entry.number)?'；存在冲突，需核对':''}\n\n${entry.body}`).join('\n\n');
+      const summaryVersion=idFor(summaryText);summaryViews.set(id,{text:summaryText,version:summaryVersion,stale:false,warnings:[],assets:{}});
+      nextResources.set(`${id}/summary-view`,{id:'summary-view',name:'章节摘要汇总视图',fileName:'99-章节摘要.md',directory,exists:true,version:summaryVersion});
       let outline = '';
       if (docs.find(d => d.kind === 'outline').exists) {
         try { const info = await safeFile(workspace, directory, artifacts.outline); outline = await fs.readFile(info.path, 'utf8'); } catch { /* Display document read errors on demand. */ }
@@ -99,6 +124,8 @@ export async function createCatalog(workspacePath) {
         totalChapters: count(plan?.totalChapters), completedChapters: plan ? chapters.filter(c => c.recordedStatus === 'completed').length : null,
         recordedWords: plan && chapters.some(c => c.wordCount !== null) ? chapters.reduce((sum, c) => sum + (c.wordCount || 0), 0) : null,
         recordedStatus: typeof plan?.status === 'string' ? plan.status : null,
+        minWordsPerChapter:minimum,actualWords:chapters.some(c=>c.actualWordCount!==null)?chapters.reduce((sum,c)=>sum+(c.actualWordCount||0),0):null,
+        summaryVersion,summaryCoverage:{available:chapters.filter(c=>c.summarySource!=='missing').length,canonical:chapters.filter(c=>c.summarySource==='canonical').length,total:chapters.length,missing,conflicts:[...summaries.conflicts]},
         updatedAt: latest ? new Date(latest).toISOString() : null,
         warnings: projectWarnings, documents: docs, chapters,
       });
@@ -120,6 +147,7 @@ export async function createCatalog(workspacePath) {
     return { resource, info };
   }
   async function readDocument(projectId, docId) {
+    if(docId==='summary-view'){if(!projects.has(projectId))throw errorWith('作品不存在',404);return summaryViews.get(projectId);}
     const key = `${projectId}/${docId}`;
     try {
       const { resource, info } = await retryReplacement(()=>resolveResource(projectId,docId));

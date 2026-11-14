@@ -3,12 +3,15 @@
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="color-scheme" content="light dark"><title>小说书房 · Chinese Novelist</title>
-  <link rel="icon" href="data:,"><link rel="stylesheet" href="/styles.css">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/styles.css">
   <script defer src="/vendor/markdown-it.min.js"></script><script defer src="/vendor/purify.min.js"></script>
   <script type="module" src="/app.js"></script>
 </head>
 <body>
-  <header class="site-header"><a class="brand" href="#/">Chinese Novelist</a><span id="work-separator" hidden>/</span><button id="book-switch" hidden aria-expanded="false" aria-controls="book-menu"></button><span class="grow"></span><span id="connection" role="status" aria-live="polite">正在连接</span><a id="shelf-link" href="#/" hidden>全部作品</a></header>
+  <header class="site-header"><a class="brand" href="#/">Chinese Novelist</a><span id="work-separator" hidden>/</span><button id="book-switch" hidden aria-expanded="false" aria-controls="book-menu"></button><span class="grow"></span><button id="open-workspace">打开工作区</button><button id="open-appearance">外观</button><span id="connection" role="status" aria-live="polite">正在连接</span><a id="shelf-link" href="#/" hidden>全部作品</a></header>
+  <div id="workspace-label" class="workspace-label"></div>
+  <dialog id="workspace-dialog" class="global-dialog" aria-labelledby="workspace-title"><h2 id="workspace-title">打开本地工作区</h2><p class="muted">输入小说集合目录或单部小说目录，包括 .chinese-novelist。不会复制或上传文件。</p><form id="workspace-form"><label for="workspace-path">目录绝对路径</label><input id="workspace-path" required placeholder="例如 B:\写作\chinese-novelist"><p id="workspace-error" class="warning" role="alert"></p><div class="dialog-actions"><button type="submit" class="text-link">打开目录</button><button type="button" data-close-dialog="workspace-dialog">取消</button></div></form><h3>最近工作区</h3><div id="recent-workspaces"></div></dialog>
+  <dialog id="appearance-dialog" class="global-dialog" aria-labelledby="appearance-title"><h2 id="appearance-title">阅读外观</h2><h3>主题风格</h3><div class="theme-options"><button data-theme="paper">细线书页</button><button data-theme="white">清爽白纸</button></div><h3>明暗模式</h3><div class="theme-options"><button data-appearance="system">跟随系统</button><button data-appearance="light">浅色</button><button data-appearance="dark">深色</button></div><div class="dialog-actions"><button data-close-dialog="appearance-dialog">完成</button></div></dialog>
   <section id="book-menu" class="book-menu" aria-label="切换作品" hidden></section>
   <nav id="navigation" class="navigation" aria-label="作品资料" hidden></nav>
   <div id="project-notices" class="project-notices" role="status"></div>

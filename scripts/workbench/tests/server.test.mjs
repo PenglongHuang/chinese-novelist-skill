@@ -8,10 +8,26 @@ function request(url, options = {}) {
     const req = http.request(url, options, res => {
       let body = ''; res.setEncoding('utf8'); res.on('data', chunk => body += chunk);
       res.on('end', () => resolve({ status: res.statusCode, headers: res.headers, body }));
-    }); req.on('error', reject); req.end();
+    }); req.on('error', reject); req.end(options.body);
   });
 }
 export const tests = [
+  ['switches workspace only with session token and keeps current root on failure',async()=>{
+    const a=await fixture(),b=await fixture();let service;
+    try{
+      await a.write('book/第01章.md','甲');await b.write('book/第01章.md','乙');
+      service=await startWorkbench({workspace:a.root,intervalMs:0});
+      const initial=JSON.parse((await request(service.url+'api/projects')).body);
+      const data={method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:b.root})};
+      assert.equal((await request(service.url+'api/workspaces/open',data)).status,403);
+      data.headers['X-Workbench-Token']=initial.sessionToken;
+      assert.equal((await request(service.url+'api/workspaces/open',data)).status,200);
+      let current=JSON.parse((await request(service.url+'api/projects')).body);assert.equal(current.workspace,b.root);
+      data.body=JSON.stringify({path:b.root+'/missing'});
+      assert.equal((await request(service.url+'api/workspaces/open',data)).status,400);
+      current=JSON.parse((await request(service.url+'api/projects')).body);assert.equal(current.workspace,b.root);
+    }finally{if(service)await service.close();await a.close();await b.close();}
+  }],
   ['serves read-only API and rejects traversal, foreign origin and host', async () => {
     const f = await fixture(); let server;
     try {

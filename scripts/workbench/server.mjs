@@ -2,13 +2,17 @@ import http from 'node:http';
 import fs from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { createCatalog } from './catalog.mjs';
+import path from 'node:path';
+import { randomBytes } from 'node:crypto';
+import { idFor } from './paths.mjs';
 
 const webRoot = new URL('./web/', import.meta.url);
-const staticFiles = new Set(['index.html', 'styles.css', 'app.js', 'views.js', 'reader.js', 'markdown.js', 'documents.js', 'vendor/markdown-it.min.js', 'vendor/purify.min.js']);
+const staticFiles = new Set(['index.html', 'styles.css', 'app.js', 'views.js', 'reader.js', 'markdown.js', 'documents.js', 'favicon.svg', 'vendor/markdown-it.min.js', 'vendor/purify.min.js']);
 const types = { '.png':'image/png', '.jpg':'image/jpeg', '.jpeg':'image/jpeg', '.gif':'image/gif', '.webp':'image/webp', '.avif':'image/avif' };
 
 export async function startWorkbench({ workspace, port = 0, intervalMs = 1500 }) {
-  const catalog = await createCatalog(workspace);
+  let catalog = await createCatalog(workspace),generation=0;
+  const sessionToken=randomBytes(24).toString('hex');
   const clients = new Set(), sockets = new Set();
   let polling = false, closed = false;
   const server = http.createServer(async (req, res) => {
@@ -20,18 +24,32 @@ export async function startWorkbench({ workspace, port = 0, intervalMs = 1500 })
     const address = server.address();
     const allowed = new Set([`127.0.0.1:${address.port}`, `localhost:${address.port}`]);
     if (!allowed.has(req.headers.host) || (req.headers.origin && req.headers.origin !== `http://${req.headers.host}`)) { json(403, {error:'仅允许本地同源访问'}); return; }
-    if (!['GET', 'HEAD'].includes(req.method)) { json(405,{error:'工作台只提供读取接口'});return; }
+    if(req.method==='POST'&&req.url==='/api/workspaces/open'){
+      if(req.headers['x-workbench-token']!==sessionToken){json(403,{error:'工作区切换需要当前会话授权'});return;}
+      if(!req.headers['content-type']?.startsWith('application/json')){json(415,{error:'需要 JSON 格式的目录路径'});return;}
+      try{
+        const text=await new Promise((resolve,reject)=>{let body='';req.on('data',chunk=>{body+=chunk;if(Buffer.byteLength(body)>8192)reject(new Error('请求过长'));});req.on('end',()=>resolve(body));req.on('error',reject);});
+        const selected=JSON.parse(text).path;
+        if(typeof selected!=='string'||!path.isAbsolute(selected))throw new Error('请输入本地目录的绝对路径');
+        const resolved=await fs.realpath(selected);if(!(await fs.stat(resolved)).isDirectory())throw new Error('请选择文件夹');
+        const next=await createCatalog(resolved);catalog=next;generation++;
+        for(const client of clients)client.write(`event: catalog\ndata: ${JSON.stringify({version:idFor(catalog.workspace)+':'+catalog.version,workspace:catalog.workspace,changedProjects:[],changedDocuments:[]})}\n\n`);
+        json(200,{workspace:catalog.workspace});
+      }catch(error){json(400,{error:error.code==='ENOENT'?'目录不存在，请检查路径':error.message});}
+      return;
+    }
+    if (!['GET', 'HEAD'].includes(req.method)) { json(405,{error:'小说内容只提供读取接口'});return; }
     try {
       const url = new URL(req.url, `http://${req.headers.host}`);
       const pathname = decodeURIComponent(url.pathname);
       if (pathname === '/api/projects') {
         const quote=value=>process.platform==='win32'?`"${value}"`:`'${value.replace(/'/g,"'\\''")}'`;
         const restartCommand=`node ${quote(fileURLToPath(new URL('../workbench.mjs',import.meta.url)))} --workspace ${quote(catalog.workspace)} --port ${address.port}`;
-        json(200, {version:catalog.version,projects:catalog.listProjects(),warnings:catalog.warnings,restartCommand}); return;
+        json(200, {version:idFor(catalog.workspace)+':'+catalog.version,workspace:catalog.workspace,sessionToken,projects:catalog.listProjects(),warnings:catalog.warnings,restartCommand}); return;
       }
       if (pathname === '/api/events' && req.method === 'GET') {
         res.writeHead(200, {'Content-Type':'text/event-stream; charset=utf-8','Connection':'keep-alive','X-Accel-Buffering':'no'});
-        res.write(`event: catalog\ndata: ${JSON.stringify({version:catalog.version,changedProjects:[],changedDocuments:[]})}\n\n`);
+        res.write(`event: catalog\ndata: ${JSON.stringify({version:idFor(catalog.workspace)+':'+catalog.version,workspace:catalog.workspace,changedProjects:[],changedDocuments:[]})}\n\n`);
         clients.add(res); req.on('close',()=>clients.delete(res));return;
       }
       const match = pathname.match(/^\/api\/projects\/([a-f\d]{20})(?:\/(documents|assets)\/([\w-]+))?$/);
@@ -44,7 +62,7 @@ export async function startWorkbench({ workspace, port = 0, intervalMs = 1500 })
       const name = pathname === '/' ? 'index.html' : pathname.slice(1);
       if (staticFiles.has(name)) {
         const data=await fs.readFile(new URL(name,webRoot));
-        const type=name.endsWith('.js')?'text/javascript':name.endsWith('.css')?'text/css':'text/html';
+        const type=name.endsWith('.js')?'text/javascript':name.endsWith('.css')?'text/css':name.endsWith('.svg')?'image/svg+xml':'text/html';
         res.writeHead(200,{'Content-Type':type+'; charset=utf-8'});res.end(req.method==='HEAD'?undefined:data);return;
       }
       json(404,{error:'找不到此页面或资源'});
@@ -56,9 +74,11 @@ export async function startWorkbench({ workspace, port = 0, intervalMs = 1500 })
     if (polling || closed) return;
     polling=true;
     try {
-      const previous=catalog.version;
-      const changes=await catalog.refresh();
-      if(previous!==changes.version)for(const client of clients) {
+      const selected=catalog,epoch=generation,previous=selected.version;
+      const changes=await selected.refresh();
+      if(epoch!==generation)return;
+      changes.version=idFor(selected.workspace)+':'+changes.version;
+      if(previous!==selected.version)for(const client of clients) {
         if(client.writableLength>1024*1024){client.destroy();clients.delete(client);continue;}
         client.write(`event: catalog\ndata: ${JSON.stringify(changes)}\n\n`);
       }
@@ -67,7 +87,7 @@ export async function startWorkbench({ workspace, port = 0, intervalMs = 1500 })
   const interval=intervalMs>0?setInterval(()=>poll().catch(()=>{}),intervalMs):null;
   const heartbeat=setInterval(()=>{for(const client of clients){if(client.writableLength>1024*1024)client.destroy();else client.write(': heartbeat\n\n');}},15000);
   return {
-    url:`http://127.0.0.1:${server.address().port}/`, catalog,
+    url:`http://127.0.0.1:${server.address().port}/`, get catalog(){return catalog;},
     async close() {
       closed=true;clearInterval(interval);clearInterval(heartbeat);
       for(const client of clients)client.end();

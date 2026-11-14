@@ -49,6 +49,12 @@ node "/绝对路径/chinese-novelist-skill/scripts/workbench.mjs" --workspace "/
 
 正文可切换阅读稿与完整原文件，支持目录、字号、行距和章节翻页。文件变化后，书架与章节目录自动更新；当前文档提示点击载入，避免打断阅读。计划中的字数和完成状态会注明来源，不等于重新校验或作者审定。
 
+顶部支持“打开工作区”（输入本地绝对目录，含最近目录）和“外观”：细线书页/清爽白纸两种主题，独立选择浅色、深色或跟随系统。无需关闭服务更换作品目录。
+
+进度页展示章节状态流程、颜色和带数量的筛选项，直接统计实际正文汉字数；当计划与文件不一致时标记“状态待同步”。摘要页显示覆盖率、缺失章号和批次摘要来源，不再把空模板当作完整摘要。浏览器依然不修改正文或计划。
+
+写作 Agent 使用 [统一状态脚本](references/flows/chapter-state.md) 提交状态。旧项目可先用 `node "<skillBaseDir>/scripts/chapter-state.mjs" --project "单部小说目录" --reconcile` 检查；加 `--apply` 会备份元数据、汇总已有摘要并回填字数，已有正文先进入校验收尾，不会自动冒充已完成。缺失摘要仍需读正文补齐。
+
 断线后可使用页面给出的同端口命令重启；服务是否能在 Agent 结束后继续运行，取决于宿主的后台进程机制。详细说明见 [工作台使用流程](references/flows/workbench.md)。
 
 开发验证：`node scripts/workbench/tests/run.mjs`。浏览器回归另需开发环境中的 Playwright 与 Chrome：`node scripts/workbench/tests/browser-check.mjs`；已有独立安装时设置 `WORKBENCH_PLAYWRIGHT_MODULE` 为 Playwright 的 `index.mjs` 绝对路径。第三方浏览器资产与许可见 [THIRD_PARTY.md](scripts/workbench/THIRD_PARTY.md)。

@@ -12,6 +12,7 @@ const playwright=process.env.WORKBENCH_PLAYWRIGHT_MODULE
   ? await import(pathToFileURL(process.env.WORKBENCH_PLAYWRIGHT_MODULE).href)
   : require('playwright');
 const f=await fixture();let service,browser;
+console.log('Browser check: preparing fixture');
 try {
   const body=Array.from({length:80},(_,i)=>`他把车票翻过来，第${i+1}道折痕里仍留着一点潮气。那个人没有回答。他站在原地，等脚步声从走廊尽头传来。`).join('\n\n');
   const template='# 第01章：最后一班车\n\n## 本章概要\n不可出现在阅读稿的概要\n\n---\n## 章首引子\n> 车票背面写着他的名字。\n\n---\n## 正文\n'+body+'\n\n![本地图片](插图.png)\n\n![远程图片](https://example.invalid/tracker.png)\n\n<script>window.workbenchInjected=true</script>\n\n<img src=x onerror="window.workbenchInjected=true">\n\n[危险链接](javascript:alert(1))\n\n## 章节备注\n不可出现在阅读稿的备注';
@@ -23,8 +24,10 @@ try {
   await f.write('同名作品/02-写作计划.json',{novelName:'最后一班列车',totalChapters:1,chapters:[]});
   const image=path.join(f.root,'作品 一/插图.png');await fs.writeFile(image,Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6b0UAAAAASUVORK5CYII=','base64'));
   service=await startWorkbench({workspace:f.root,intervalMs:100});
+  console.log('Browser check: launching Chrome at '+service.url);
   browser=await playwright.chromium.launch({channel:process.env.WORKBENCH_BROWSER||'chrome',headless:true});
   const page=await browser.newPage({viewport:{width:1440,height:950}});
+  page.setDefaultTimeout(6000);page.setDefaultNavigationTimeout(6000);
   const errors=[],external=[];
   page.on('pageerror',e=>errors.push(e.message));
   page.on('request',r=>{if(!r.url().startsWith(service.url))external.push(r.url());});
@@ -69,8 +72,13 @@ try {
   console.log('PASS current document stays stable until explicit reload; new chapters update navigation');
   await page.locator('[data-view="style"]').click();await page.waitForFunction(()=>document.querySelector('#content')?.textContent.includes('资料尚未生成'));
   await page.locator('[data-view="summaries"]').click();await page.waitForFunction(()=>document.querySelector('.markdown')?.textContent.includes('妹妹归来'));
-  await page.locator('[data-view="progress"]').click();await page.waitForFunction(()=>document.querySelector('#content')?.textContent.includes('计划标记已完成'));
+  await page.locator('[data-view="progress"]').click();await page.waitForSelector('[data-status-filter="needs_sync"]');
   assert((await page.locator('#content').innerText()).includes('正文未生成'));
+  await page.locator('[data-status-filter="pending"]').click({timeout:2500});
+  assert.equal(await page.locator('.progress-row').count(),1);
+  await page.locator('[data-status-filter="needs_sync"]').click();assert.equal(await page.locator('.progress-row').count(),3);
+  assert((await page.locator('#content').innerText()).includes('实测'));
+  await page.locator('[data-status-filter="all"]').click();
   await page.locator('[data-view="read"]').click();await page.waitForSelector('.markdown h1');
   assert(page.url().includes('/read/'),'default reader route includes the selected chapter');
   await page.locator('[data-view="outline"]').click();await page.waitForSelector('.markdown table');
@@ -81,6 +89,18 @@ try {
   await page.emulateMedia({colorScheme:'dark'});
   if(process.env.WORKBENCH_SCREENSHOT)await page.screenshot({path:process.env.WORKBENCH_SCREENSHOT,fullPage:true});
   assert.deepEqual(errors,[]);
+  await page.locator('#open-appearance').click();await page.locator('[data-theme="white"]').click();await page.locator('[data-appearance="dark"]').click();
+  await page.locator('[data-close-dialog="appearance-dialog"]').click();await page.reload();await page.waitForSelector('.markdown');
+  assert.equal(await page.locator('html').getAttribute('data-theme'),'white');assert.equal(await page.locator('html').getAttribute('data-appearance'),'dark');
+  await f.write('other/.chinese-novelist/新书/第01章-新章.md','# 新章\n新的工作区');
+  await page.locator('#open-workspace').click();await page.locator('#workspace-path').fill(f.root+'/missing');await page.locator('#workspace-form button[type="submit"]').click();
+  await page.waitForFunction(()=>document.querySelector('#workspace-error')?.textContent.includes('不存在'));
+  await page.locator('#workspace-path').fill(f.root+'/other/.chinese-novelist');await page.locator('#workspace-form button[type="submit"]').click();
+  await page.waitForFunction(()=>document.querySelector('.book-link')?.textContent.includes('新书'));
+  await page.locator('#open-workspace').click();await page.locator('#workspace-path').fill(f.root);await page.locator('#workspace-form button[type="submit"]').click();
+  await page.waitForFunction(()=>document.querySelectorAll('.book-link').length===2);
+  await page.goto(service.url+`#/projects/${p.id}/outline`);await page.waitForSelector('.markdown');
+  console.log('PASS status filters, theme persistence and explicit workspace switching with error retention');
   await fs.rm(path.join(f.root,'作品 一'),{recursive:true});
   await page.waitForFunction(()=>document.querySelector('#content')?.textContent.includes('作品不存在'));
   console.log('PASS missing documents, legacy summary, truthful progress, responsive layout and deleted project');
@@ -90,4 +110,8 @@ try {
   await page.waitForFunction(()=>document.querySelector('#connection')?.textContent.includes('已连接'),{timeout:10000});
   console.log('PASS reconnect after service restart');
   console.log('Browser checks passed, 0 page errors, 0 external requests.');
+} catch(error) {
+  const page=browser?.contexts()[0]?.pages()[0];
+  if(page)console.error('Browser failure context:',page.url(),(await page.locator('body').innerText().catch(()=>'' )).slice(0,900));
+  throw error;
 } finally {if(browser)await browser.close();if(service)await service.close();await f.close();}

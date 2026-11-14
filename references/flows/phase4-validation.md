@@ -2,6 +2,8 @@
 
 **目标**：确保所有章节完成且字数达标，全程无需用户介入。
 
+完成门槛以 [chapter-state.md](chapter-state.md) 为准，必须包含正式章节摘要和实际保存的进度，不能仅凭文件数量或字数宣布完稿。
+
 ---
 
 ## 校验流程
@@ -22,11 +24,11 @@
    node {skillBaseDir}/scripts/check_chapter_wordcount.mjs --all <项目文件夹路径> --json
    ```
    退出码：0=全部达标，1=有不达标，2=错误。从 `--json` 输出的 `results[]` 读取各章 `word_count` 与 `status`
-3. **更新 JSON**：将 `wordCount` 和 `wordCountPass` 写入对应章节记录
+3. **同步收尾**：运行 chapter-state.mjs --reconcile --apply 汇总已有摘要和实测计数；缺摘要或冲突先核对正文处理。逐章提交 completed，由脚本验证门槛并回填记录。
 
 ### 3. 汇总结果
 
-- **全部通过**（所有章节文件存在且 `wordCountPass == true`）→ 更新项目 `status` 为 `"completed"`，进入步骤5
+- **全部通过**（全部章节 completed、字数达标、正式摘要齐全）→ 运行 reconcile --apply 做最终核对，由脚本将项目设 completed，进入步骤5
 - **有不通过** → 进入步骤4
 
 ### 4. 自动修复（最多3轮）
@@ -41,7 +43,7 @@
 循环规则：
 - 最多执行 **3轮** 校验-修复循环
 - 超过3次仍不合格的章节，保留记录但不阻塞流程
-- 所有修复完成后更新项目 `status` 为 `"completed"`
+- 三轮后仍有未解决项，项目更新为 `"needs_attention"`，保留真实失败记录；不能标 completed。全部门槛通过才更新 completed。
 
 ### 5. 完成报告
 

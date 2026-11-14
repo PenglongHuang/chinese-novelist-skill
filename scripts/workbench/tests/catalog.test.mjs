@@ -5,6 +5,20 @@ import { fixture, plan } from './helpers.mjs';
 import { createCatalog } from '../catalog.mjs';
 
 export const tests = [
+  ['observes stale pending chapters and previews unmerged summaries without writing',async()=>{
+    const f=await fixture();try{
+      await f.write('book/02-写作计划.json',{...plan(),minWordsPerChapter:3});
+      await f.write('book/第02章-第二章.md','# 第2章\n真正正文四字');
+      await f.write('book/99-章节摘要.md','# 章节摘要\n\n模板说明');
+      await f.write('book/_batch1-summaries.md','# 批次\n## 第2章 第二章\n真实摘要与后果。');
+      const c=await createCatalog(f.root),p=c.listProjects()[0],chapter=p.chapters.find(c=>c.number===2);
+      assert.equal(chapter.actualWordCount,6);assert.equal(chapter.actualWordCountPass,true);
+      assert.equal(chapter.effectiveStatus,'needs_sync');assert.equal(chapter.summarySource,'batch');
+      assert.equal(p.summaryCoverage.available,1);assert(p.summaryCoverage.missing.includes(1));
+      const summary=await c.readDocument(p.id,'summary-view');assert(summary.text.includes('真实摘要与后果'));assert(summary.text.includes('未汇总'));
+      assert.equal(JSON.parse(await fs.readFile(path.join(f.root,'book/02-写作计划.json'),'utf8')).chapters[0].wordCount,3100);
+    }finally{await f.close();}
+  }],
   ['keeps cached chapter and plan during replacement gaps, then recovers',async()=>{
     const f=await fixture();
     try {

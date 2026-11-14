@@ -66,3 +66,5 @@ metadata:
 ## 共享机制
 
 偏好系统、写作计划系统、黄金法则详解、字数检查脚本等跨阶段共享机制。 → 详见 [shared-infrastructure.md](references/flows/shared-infrastructure.md)
+
+章节状态流转、字数与摘要落盘门槛、并行汇总恢复统一见 [chapter-state.md](references/flows/chapter-state.md)。正文写出不等于章节 completed，所有模式使用同一状态提交脚本。

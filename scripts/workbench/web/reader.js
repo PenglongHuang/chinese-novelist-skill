@@ -2,11 +2,15 @@ import { escapeHtml as e } from './markdown.js';
 import { href } from './views.js';
 
 const memory=new Map();
+let preferenceScope='';
+export function configurePreferenceScope(workspace){preferenceScope=workspace||'';}
+const scopedKey=key=>/^(position|chapter):/.test(key)?preferenceScope+':'+key:key;
 export function readPreference(key,fallback) {
+  key=scopedKey(key);
   try { const value=localStorage.getItem('novel-workbench:'+key);return value===null?fallback:JSON.parse(value); }
   catch { return memory.has(key)?memory.get(key):fallback; }
 }
-export function writePreference(key,value) { memory.set(key,value);try{localStorage.setItem('novel-workbench:'+key,JSON.stringify(value));}catch{} }
+export function writePreference(key,value) { key=scopedKey(key);memory.set(key,value);try{localStorage.setItem('novel-workbench:'+key,JSON.stringify(value));}catch{} }
 export function applyTypography() {
   const font=Number(readPreference('fontSize',18)),leading=Number(readPreference('lineHeight',2.1));
   document.documentElement.style.setProperty('--reader-size',`${Math.min(26,Math.max(15,font||18))}px`);

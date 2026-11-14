@@ -92,7 +92,7 @@
 
 ### 作用
 
-- **进度跟踪**：记录每章创作状态（pending/in_progress/completed/failed）
+- **进度跟踪**：记录每章创作状态（pending/in_progress/validating/completed/failed）。状态及完成门槛见 [chapter-state.md](chapter-state.md)，通过统一 CLI 提交，不能并行整体覆写 JSON。
 - **写作模式**：记录用户选择的写作模式（serial/subagent-parallel/agent-teams）
 - **中断续写**：Phase 0 读取 JSON 检测未完成项目，支持从断点继续
 - **校验依据**：Phase 4 基于 JSON 校验章节完成度和字数
