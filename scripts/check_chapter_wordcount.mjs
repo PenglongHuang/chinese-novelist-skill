@@ -9,7 +9,7 @@
  *
  * 退出码: 0=全部达标  1=有章节不达标  2=文件/目录/参数错误
  * --json: 输出机器可读 JSON（供 Agent 解析写回 02-写作计划.json）；
- *         出错时输出 {"error": "..."}；summary.errors 为文件缺失数
+ *         参数或目录错误时输出 {"error": "..."}；summary.errors 为章节文件错误数
  */
 
 import fs from 'node:fs';
@@ -58,22 +58,28 @@ function extractContentFromChapter(filePath) {
 
 function checkChapter(filePath, minWords = 3000) {
   /** 检查单个章节的字数 */
-  if (!fs.existsSync(filePath)) {
-    return {
-      file: path.normalize(filePath),
-      exists: false,
-      word_count: 0,
-      status: 'error',
-      message: `文件不存在: ${filePath}`,
-    };
+  const file = path.normalize(filePath);
+  let exists = false;
+  let mainContent;
+  try {
+    const stat = fs.statSync(filePath);
+    exists = true;
+    if (!stat.isFile()) {
+      return { file, exists, word_count: 0, status: 'error', message: `不是普通文件: ${filePath}` };
+    }
+    mainContent = extractContentFromChapter(filePath);
+  } catch (error) {
+    const message = error.code === 'ENOENT'
+      ? `文件不存在: ${filePath}`
+      : `无法读取章节文件: ${filePath}（${error.code}）`;
+    return { file, exists, word_count: 0, status: 'error', message };
   }
-  const mainContent = extractContentFromChapter(filePath);
   const wordCount = countChineseWords(mainContent);
   const status = wordCount >= minWords ? 'pass' : 'fail';
   const message = `字数: ${wordCount}` + (
     wordCount >= minWords ? ' (✓ 达标)' : ` (✗ 不足，需要至少 ${minWords} 字)`
   );
-  return { file: path.normalize(filePath), exists: true, word_count: wordCount, status, message };
+  return { file, exists, word_count: wordCount, status, message };
 }
 
 function chapterNumber(name) {
@@ -124,14 +130,14 @@ function printResults(results, minWords = 3000) {
   let totalWords = 0;
   let passed = 0;
   let failed = 0;
-  const errors = results.filter((r) => !r.exists).length;
+  const errors = results.filter((r) => r.status === 'error').length;
 
   out('\n' + '='.repeat(60));
   out('章节字数检查报告');
   out('='.repeat(60));
 
   for (const result of results) {
-    if (!result.exists) {
+    if (result.status === 'error') {
       out(`\n❌ ${result.file}`);
       out(`   ${result.message}`);
       continue;
@@ -201,7 +207,6 @@ function main() {
   }
 
   let results;
-  let hasError;
   if (args[0] === '--all') {
     if (args.length < 2) emitError('错误: 使用 --all 时需要指定目录路径');
     const directory = args[1];
@@ -209,18 +214,17 @@ function main() {
     const r = checkAllChapters(directory, minWords);
     if (r.error) emitError(`错误: ${r.error}`);
     results = r.results;
-    hasError = results.some((x) => !x.exists);
   } else {
     const filePath = args[0];
     minWords = args.length > 1 ? parseMinWords(args[1]) : 3000;
     results = [checkChapter(filePath, minWords)];
-    hasError = !results[0].exists;
   }
+  const hasError = results.some((result) => result.status === 'error');
 
   if (asJson) {
     const passed = results.filter((r) => r.exists && r.status === 'pass').length;
     const failed = results.filter((r) => r.exists && r.status === 'fail').length;
-    const errors = results.filter((r) => !r.exists).length;
+    const errors = results.filter((r) => r.status === 'error').length;
     const output = {
       results,
       summary: {
