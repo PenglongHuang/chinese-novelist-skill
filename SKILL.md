@@ -34,7 +34,7 @@ metadata:
 通过递进式问答收集创作需求，确定小说定位与标题：
 
 - **核心定位**（必答，Q1-Q3）：题材创意、主角设定、核心冲突 → 详见 [phase1-layer1-core.md](references/flows/phase1-layer1-core.md)
-- **深度定制与规格**（2 次合并提问）：世界观、视角基调、核心主题、读者定位、章节数量、配置确认 → 详见 [phase1-layer2-customize.md](references/flows/phase1-layer2-customize.md)
+- **深度定制与规格**（2 次合并提问）：世界观、视角基调、核心主题、读者定位、章节数量、每章字数、配置确认 → 详见 [phase1-layer2-customize.md](references/flows/phase1-layer2-customize.md)
 - **标题生成**：AI 基于创意元素生成候选标题，用户选择或自定义 → 详见 [phase1-layer3-title.md](references/flows/phase1-layer3-title.md)
 
 ### 第二阶段：规划 + 二次确认
@@ -57,8 +57,4 @@ metadata:
 
 ### 第四阶段：自动校验与修复（无需用户确认）
 
-全程无需用户介入，自动检查所有章节完成度和字数，不合格章节自动重写（最多3轮）。 → 详见 [phase4-validation.md](references/flows/phase4-validation.md)
-
-## 共享机制
-
-偏好系统、写作计划系统、黄金法则详解、字数检查脚本等跨阶段共享机制。 → 详见 [shared-infrastructure.md](references/flows/shared-infrastructure.md)
+主 Agent 调用脚本检查章节状态和字数，将问题派回原写作 worker 处理，最多3轮；未通过则标记 needs_attention。全程无需用户确认。 → 详见 [phase4-validation.md](references/flows/phase4-validation.md)

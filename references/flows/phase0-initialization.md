@@ -8,7 +8,26 @@
 - 存在 → 加载偏好数据，用于后续选项排序、推荐标记、个性化欢迎语
 - 不存在 → 使用默认值，首次交互结束后自动创建
 
-偏好数据结构与更新规则详见 → [shared-infrastructure.md](shared-infrastructure.md)
+偏好文件位于当前工作目录，结构如下：
+
+```json
+{
+  "version": 1,
+  "updatedAt": "[ISO时间]",
+  "preferences": {
+    "favoriteGenres": [],
+    "preferredProtagonist": "",
+    "preferredPerspective": "",
+    "preferredTone": "",
+    "typicalChapterCount": null,
+    "styleReferences": [],
+    "dislikes": [],
+    "creationHistory": []
+  }
+}
+```
+
+每层问答结束后静默更新本层偏好，保留已有历史并更新 `updatedAt`。用户要求记住、忘记某项或重置偏好时，按要求保存或清除。JSON 损坏时使用默认偏好并修复文件。
 
 ## 2. 快捷入口检测
 
@@ -30,10 +49,12 @@
 
 扫描 `./chinese-novelist/` 目录下的项目文件夹：
 
-- 查找含 `02-写作计划.json` 且 `status` 为 `"in_progress"` 或 `"validating"` 的项目
+- 查找含 `02-写作计划.json` 且 `status` 为 `"in_progress"`、`"validating"` 或 `"needs_attention"` 的项目
 - 如果找到未完成项目：
   - 展示项目信息：小说名称、完成进度（X/Y 章已完成）
   - 提供选项：
-    - "继续上次创作" → 直接进入第三阶段，从中断章节继续
+    - "继续上次创作" → validating / needs_attention 项目进入第四阶段，从校验和未通过项继续；其他项目进入第三阶段续写
     - "开始新作品" → 进入第一层问答
 - 如果未找到 → 正常进入快捷入口检测或第一层问答
+
+写作计划 JSON 损坏时提示用户，参考章节摘要恢复进度；章节状态丢失时，结合章节文件和字数脚本重建记录。
