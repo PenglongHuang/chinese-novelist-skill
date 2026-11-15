@@ -204,7 +204,7 @@ chinese-novelist/
     ├── 00-人物档案.md                  # 主角、反派、配角档案
     ├── 02-写作计划.json                # 章节状态与字数记录
     ├── 03-文风基准.md                  # 文风指纹、基准段落、AI味负面清单
-    ├── 99-章节摘要.md                  # 逐章事件后果与人物状态
+    ├── 99-章节摘要.md                  # 预建全章标题，每章收尾原位填写摘要
     ├── 第01章-最后一班列车.md
     ├── 第02章-消失的乘客.md
     └── ...
@@ -224,7 +224,6 @@ chinese-novelist/
 | `phase2-planning.md` | Phase 2：规划与写作计划生成 |
 | `phase3-writing.md` | Phase 3：疯狂创作（三种写作模式） |
 | `phase4-validation.md` | Phase 4：自动校验与修复 |
-| `shared-infrastructure.md` | 共享机制（偏好系统、黄金法则、字数脚本） |
 
 ### 写作指南（`references/guides/`）
 
