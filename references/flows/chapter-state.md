@@ -13,9 +13,9 @@
 使用绝对 skill 安装目录调用，`--project` 指向单部小说目录：
 
 ```bash
-node "{skillBaseDir}/scripts/chapter-state.mjs" --project "{projectPath}" --chapter 1 --status in_progress
-node "{skillBaseDir}/scripts/chapter-state.mjs" --project "{projectPath}" --chapter 1 --status validating
-node "{skillBaseDir}/scripts/chapter-state.mjs" --project "{projectPath}" --chapter 1 --status completed
+node "{skillBaseDir}/scripts/writing/chapter-state.mjs" --project "{projectPath}" --chapter 1 --status in_progress
+node "{skillBaseDir}/scripts/writing/chapter-state.mjs" --project "{projectPath}" --chapter 1 --status validating
+node "{skillBaseDir}/scripts/writing/chapter-state.mjs" --project "{projectPath}" --chapter 1 --status completed
 ```
 
 首次写正文前提交 in_progress；正文写完后提交 validating。完成润色、正式摘要、词典更新及必要文风校准后提交 completed。完成提交失败必须修正原因，禁止手工改 completed 绕过门槛。提交时脚本锁定后重读 JSON，原子写回并填入实测字数/通过标记，避免并行批次覆盖其他章节。failed 提交会增加 retryCount。锁等待失败时重试，不删除其他进程仍在使用的锁。
@@ -28,9 +28,9 @@ node "{skillBaseDir}/scripts/chapter-state.mjs" --project "{projectPath}" --chap
 
 ```bash
 # 先报告缺章和冲突，不改正文
-node "{skillBaseDir}/scripts/chapter-state.mjs" --project "{projectPath}" --reconcile
+node "{skillBaseDir}/scripts/writing/chapter-state.mjs" --project "{projectPath}" --reconcile
 # 备份元数据、合并已有摘要、填入实测字数
-node "{skillBaseDir}/scripts/chapter-state.mjs" --project "{projectPath}" --reconcile --apply
+node "{skillBaseDir}/scripts/writing/chapter-state.mjs" --project "{projectPath}" --reconcile --apply
 ```
 
 备份位于作品内 `.state-backups/`。正式摘要优先，冲突批次不能覆盖正式记录。缺少的摘要必须回读对应正文补写，不得从大纲杜撰。汇总不自动把旧章节标 completed，只将已存在正文推进 validating；主 Agent 仍须核对内容及提交完成。

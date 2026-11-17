@@ -49,7 +49,7 @@
 14. **字数检查** — 必须使用脚本检查：
 
     ```bash
-    node "{skillBaseDir}/scripts/check_chapter_wordcount.mjs" "{章节文件绝对路径}" {minWordsPerChapter} --json
+    node "{skillBaseDir}/scripts/writing/check_chapter_wordcount.mjs" "{章节文件绝对路径}" {minWordsPerChapter} --json
     ```
 
     退出码：0=达标，1=不足，2=错误。读取 `results[].word_count` 填入写作计划的 `wordCount`。`{minWordsPerChapter}` 使用写作计划中本书的字数下限。

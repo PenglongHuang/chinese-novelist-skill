@@ -15,7 +15,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { countNarrative } from './visual/web/documents.js';
+import { countNarrative } from '../visual/web/documents.js';
 
 /** 行级输出：与 Python print 一致，'\n' 按平台行尾输出（Windows 为 CRLF） */
 function out(text) {

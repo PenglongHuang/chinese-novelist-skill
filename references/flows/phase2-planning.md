@@ -42,7 +42,7 @@
 
 5. **创建章节摘要文件**：写作计划保存后，调用安装目录的绝对路径：
    ```bash
-   node "{skillBaseDir}/scripts/init_chapter_summaries.mjs" "{项目目录绝对路径}" --json
+   node "{skillBaseDir}/scripts/writing/init_chapter_summaries.mjs" "{项目目录绝对路径}" --json
    ```
    脚本读取写作计划，预建全部 `## 第{XX}章 {标题}` 小节，标题下留空；再次运行只补缺失标题，保留已有内容。退出码：0=成功，1=框架冲突（见 `issues`），2=参数或文件错误。
 

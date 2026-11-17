@@ -9,7 +9,7 @@ export const tests=[
   ['skill CLI counts narrative through the shared single-source counter',async()=>{
     const f=await fixture();try{
       const file=await f.write('第01章-短章.md','# 第01章\n## 本章概要\n'+'概'.repeat(300)+'\n## 正文\n'+'文'.repeat(2900)+'\n## 章节备注\n'+'注'.repeat(100));
-      const script=fileURLToPath(new URL('../../check_chapter_wordcount.mjs',import.meta.url));
+      const script=fileURLToPath(new URL('../../writing/check_chapter_wordcount.mjs',import.meta.url));
       const result=spawnSync(process.execPath,[script,file,'--json'],{encoding:'utf8'});
       assert.equal(result.status,0);
       assert.equal(JSON.parse(result.stdout).results[0].word_count,3310);
@@ -29,7 +29,7 @@ export const tests=[
     const f=await fixture();
     try {
       const file=await f.write('第01章-回归.md','# 第01章：回归\n'+ '字'.repeat(3100));
-      const script=fileURLToPath(new URL('../../check_chapter_wordcount.mjs',import.meta.url));
+      const script=fileURLToPath(new URL('../../writing/check_chapter_wordcount.mjs',import.meta.url));
       const single=spawnSync(process.execPath,[script,file,'--json'],{encoding:'utf8'});
       assert.equal(single.status,0);assert.equal(JSON.parse(single.stdout).results[0].word_count,3100);
       const short=await f.write('第03章-短篇约定.md','字'.repeat(2000));
