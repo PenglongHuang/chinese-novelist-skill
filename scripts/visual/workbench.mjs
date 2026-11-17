@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 import path from 'node:path';
-import { startWorkbench } from './workbench/server.mjs';
+import { startWorkbench } from './server.mjs';
 
 const args=process.argv.slice(2);
 if(args.includes('--help')||args.includes('-h')) {
-  console.log('小说只读工作台\n用法: node <skillBaseDir>/scripts/workbench.mjs --workspace <小说集合或单部小说目录> [--port 端口]\n默认目录: 当前目录/chinese-novelist\n停止服务: Ctrl+C；作品文件不会被修改。');
+  console.log('小说只读工作台\n用法: node <skillBaseDir>/scripts/visual/workbench.mjs --workspace <小说集合或单部小说目录> [--port 端口]\n默认目录: 当前目录/chinese-novelist\n停止服务: Ctrl+C；作品文件不会被修改。');
 } else {
   try {
     const options={workspace:path.resolve('chinese-novelist'),port:0};

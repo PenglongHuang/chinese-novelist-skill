@@ -4,7 +4,7 @@ import http from 'node:http';
 import { fileURLToPath } from 'node:url';
 import { fixture } from './helpers.mjs';
 
-const cli=fileURLToPath(new URL('../../workbench.mjs',import.meta.url));
+const cli=fileURLToPath(new URL('../workbench.mjs',import.meta.url));
 export const tests=[
   ['skill CLI counts narrative through the shared single-source counter',async()=>{
     const f=await fixture();try{
@@ -23,7 +23,7 @@ export const tests=[
       const url=await new Promise((resolve,reject)=>{let text='';const timer=setTimeout(()=>reject(new Error('CLI did not start')),5000);child.once('error',reject);child.once('exit',code=>{if(code)reject(new Error('CLI exited '+code));});child.stdout.on('data',chunk=>{text+=chunk;const match=text.match(/http:\/\/127\.0\.0\.1:\d+\//);if(match){clearTimeout(timer);resolve(match[0]);}});});
       const result=await new Promise((resolve,reject)=>http.get(url+'api/projects',res=>{let text='';res.on('data',chunk=>text+=chunk);res.on('end',()=>resolve(JSON.parse(text)));}).on('error',reject));
       assert.equal(result.projects.length,0);assert(result.warnings.length);assert(result.restartCommand.includes('--port'));
-    } finally {if(child&&!child.killed){const exited=new Promise(r=>child.once('exit',r));child.kill();await exited;}await f.close();}
+    } finally {if(child&&child.exitCode===null){const exited=new Promise(r=>child.once('exit',r));child.kill();await exited;}await f.close();}
   }],
   ['existing wordcount CLI preserves single/batch JSON counts and failure exit codes',async()=>{
     const f=await fixture();

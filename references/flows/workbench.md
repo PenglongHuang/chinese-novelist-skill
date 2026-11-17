@@ -8,16 +8,16 @@
 
 ## 启动
 
-从 SKILL.md 所在位置确定 `{skillBaseDir}`，用该安装目录的绝对路径调用，不要从用户目录执行相对路径 `scripts/workbench.mjs`。
+从 SKILL.md 所在位置确定 `{skillBaseDir}`，用该安装目录的绝对路径调用，不要从用户目录执行相对路径 `scripts/visual/workbench.mjs`。
 
 ```bash
-node "{skillBaseDir}/scripts/workbench.mjs" --workspace "{作品集合目录绝对路径}"
+node "{skillBaseDir}/scripts/visual/workbench.mjs" --workspace "{作品集合目录绝对路径}"
 ```
 
 例如 skill 安装在 `C:/Skills/chinese-novelist`，用户在 `D:/Writing`：
 
 ```bash
-node "C:/Skills/chinese-novelist/scripts/workbench.mjs" --workspace "D:/Writing/chinese-novelist"
+node "C:/Skills/chinese-novelist/scripts/visual/workbench.mjs" --workspace "D:/Writing/chinese-novelist"
 ```
 
 运行时需要 Node.js >=16，无需 npm install、构建、API Key 或外部 CDN。使用宿主环境支持的长驻进程/后台终端机制保持服务；Windows 若使用 Start-Process，必须加 `-WindowStyle Hidden`。保留输出日志，读取实际打印的 `http://127.0.0.1:端口/` 地址，提供可点击链接并在宿主支持时打开浏览器。不能假设固定端口或凭空拼地址。

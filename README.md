@@ -36,7 +36,7 @@
 ### 打开小说书房（本地只读可视化）
 
 ```bash
-node "<skill 安装目录>/scripts/workbench.mjs" --workspace "<作品集合目录>"
+node "<skill 安装目录>/scripts/visual/workbench.mjs" --workspace "<作品集合目录>"
 ```
 
 打开终端打印的本地地址即可。本地只读、随文件变化自动更新，详见 [工作台使用流程](references/flows/workbench.md)。

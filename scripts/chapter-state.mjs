@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { updateChapter, reconcileProject } from './workbench/state.mjs';
+import { updateChapter, reconcileProject } from './visual/state.mjs';
 const args=process.argv.slice(2),value=key=>{const n=args.indexOf(key);return n<0?null:args[n+1];};
 if(args.includes('--help'))console.log('用法: node chapter-state.mjs --project "小说目录" --chapter 1 --status in_progress|validating|completed|failed\n汇总校对（默认只报告）: --project "小说目录" --reconcile [--apply]\n--apply 会备份元数据、合并已有摘要并回填计数，不自动将旧章节标为已完成。');
 else try{
