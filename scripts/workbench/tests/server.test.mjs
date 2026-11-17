@@ -1,16 +1,8 @@
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import { fixture, plan } from './helpers.mjs';
+import { fixture, plan, request } from './helpers.mjs';
 import { startWorkbench } from '../server.mjs';
 
-function request(url, options = {}) {
-  return new Promise((resolve, reject) => {
-    const req = http.request(url, options, res => {
-      let body = ''; res.setEncoding('utf8'); res.on('data', chunk => body += chunk);
-      res.on('end', () => resolve({ status: res.statusCode, headers: res.headers, body }));
-    }); req.on('error', reject); req.end(options.body);
-  });
-}
 export const tests = [
   ['switches workspace only with session token and keeps current root on failure',async()=>{
     const a=await fixture(),b=await fixture();let service;

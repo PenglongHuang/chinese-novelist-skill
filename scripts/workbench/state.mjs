@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { safeFile, idFor } from './paths.mjs';
+import { safeFile, idFor, atomicWrite as atomic } from './paths.mjs';
 import { collectSummaries } from './inspection.mjs';
 import { countNarrative, mergeChapterSummaries } from './web/documents.js';
 
@@ -11,7 +11,6 @@ async function locked(project,operation){
   if(!handle)throw new Error('进度正在由其他进程更新，请稍后重试；若上次进程异常退出，确认后再移除 .chapter-state.lock。');
   try{return await operation(root);}finally{await handle.close();await fs.unlink(lock);}
 }
-async function atomic(file,text){const temporary=file+'.'+randomUUID()+'.tmp';try{await fs.writeFile(temporary,text);await fs.rename(temporary,file);}finally{await fs.unlink(temporary).catch(()=>{});}}
 async function context(root){
   const read=async name=>fs.readFile((await safeFile(root,root,name)).path,'utf8');
   const plan=JSON.parse((await read('02-写作计划.json')).replace(/^\uFEFF/,''));
@@ -23,7 +22,7 @@ async function context(root){
 }
 async function inspect(ctx,chapter){
   const text=await ctx.read(chapter.filePath),summary=ctx.summaries.entries.get(chapter.chapterNumber);
-  const wordCount=countNarrative(text).wordCount;
+  const wordCount=countNarrative(text);
   return {wordCount,wordCountPass:wordCount>=ctx.minimum,summaryPass:summary?.kind==='canonical'&&!ctx.summaries.conflicts.has(chapter.chapterNumber),validatedContentHash:idFor(text),summaryHash:summary?idFor(summary.body):null};
 }
 export async function updateChapter(project,number,status){return locked(project,async root=>{

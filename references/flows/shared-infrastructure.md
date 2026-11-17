@@ -4,7 +4,7 @@
 
 ## 本地只读小说书房
 
-启动命令为 `node "{skillBaseDir}/scripts/workbench.mjs" --workspace "{作品集合目录绝对路径}"`。`{skillBaseDir}` 是本 skill 安装目录，不是用户工作目录。工作区默认是当前工作目录下的 `chinese-novelist/`，也可显式指定单部小说目录。启动和浏览不修改偏好、计划或正文，也不代表确认开写。详细启动、生命周期与错误处理见 [workbench.md](workbench.md)。
+启动命令为 `node "{skillBaseDir}/scripts/workbench.mjs" --workspace "{作品集合目录绝对路径}"`。`{skillBaseDir}` 是本 skill 安装目录，不是用户工作目录。工作区默认是当前工作目录下的 `chinese-novelist/`，也可显式指定单部小说目录。启动和浏览不修改计划或正文，也不代表确认开写；唯一例外是书房「设置」窗口可以查看并编辑 `user-preferences.json`（口味偏好），其余文件一律只读。详细启动、生命周期与错误处理见 [workbench.md](workbench.md)。
 
 ---
 
@@ -22,17 +22,17 @@
 
 `user-preferences.json`（项目根目录，首次使用后自动创建）
 
-### 数据结构
+### 数据结构（v2：口味字段全部为字符串数组）
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "updatedAt": "2026-04-12",
   "preferences": {
     "favoriteGenres": [],
-    "preferredProtagonist": "",
-    "preferredPerspective": "",
-    "preferredTone": "",
+    "preferredProtagonist": [],
+    "preferredPerspective": [],
+    "preferredTone": [],
     "typicalChapterCount": null,
     "styleReferences": [],
     "dislikes": [],
@@ -41,15 +41,20 @@
 }
 ```
 
+- v1 里 `preferredProtagonist` / `preferredPerspective` / `preferredTone` 是单值字符串；读取时兼容两种格式（字符串视为单元素数组），写入一律用数组。
+- 数组字段保存「全部常用项」：问答中新选中的项追加进去（去重），静默更新时整个列表覆写为当前所有常用项。
+- `typicalChapterCount` 恒为 1–500 的整数或 null；`creationHistory` 只由创作流程追加，书房设置窗口对它只读。
+
 ### 偏好更新规则
 
 | 时机 | 行为 |
 |------|------|
-| 每完成一层问答 | 静默将本层回答同步到偏好文件（追加/更新，不删除历史） |
+| 每完成一层问答 | 静默将本层回答同步到偏好文件（数组字段去重追加，不删除历史） |
 | 用户说"记住我的偏好" | 保存当前所有配置到偏好 |
 | 用户说"忘记XX偏好" | 清除指定维度的偏好 |
 | 用户说"重置偏好" | 清空所有偏好数据 |
 | 一部长篇创作完成 | 将作品信息追加到 `creationHistory` |
+| 书房设置窗口保存 | 仅写口味字段（列表+章数）；`creationHistory` 与未知字段以磁盘为准，不会被覆盖 |
 
 ### 偏好如何影响交互
 

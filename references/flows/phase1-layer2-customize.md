@@ -42,7 +42,7 @@ Options:
 >
 > **追问**：仅当世界观选了"完全虚构世界"且 Other 中无细节时，一句话追问独特规则/设定要素（2-3 个基于题材的方向 + Other，或"后面再定"）。
 >
-> **偏好集成**：`preferredPerspective` / `preferredTone` 有值时换入对应问。
+> **偏好集成**：`preferredPerspective` / `preferredTone` 列表中的项换入对应问并标⭐。
 >
 > 生存与希望、自由与束缚等主题变体走 Other。
 

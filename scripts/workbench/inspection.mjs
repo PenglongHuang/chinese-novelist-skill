@@ -20,11 +20,8 @@ export function inspectStatus(chapter,minimum) {
   if(chapter.exists&&(!chapter.recordedStatus||chapter.recordedStatus==='pending'))issues.push('正文已存在，计划状态未同步');
   if(!chapter.exists&&chapter.recordedStatus&&chapter.recordedStatus!=='pending')issues.push('计划有进度，但正文文件缺失');
   if(chapter.recordedStatus==='completed') {
-    if(chapter.validatedContentHash!==chapter.actualContentHash)issues.push('正文版本未经当前完成记录确认');
-    if(chapter.summaryHash!==chapter.actualSummaryHash)issues.push('摘要版本未经当前完成记录确认');
-    if(!chapter.actualWordCountPass)issues.push('字数未达到完成门槛');
-    if(chapter.summarySource!=='canonical'||chapter.summaryConflict)issues.push('正式摘要未就绪');
-    if(chapter.wordCount!==chapter.actualWordCount||chapter.wordCountPass!==true)issues.push('字数记录未同步');
+    if(chapter.actualWordCountPass===false)issues.push('字数未达到完成门槛');
+    if(chapter.wordCount!==null&&chapter.wordCount!==undefined&&chapter.actualWordCount!==null&&chapter.wordCount!==chapter.actualWordCount)issues.push('字数记录未同步');
   }
   return {syncIssues:issues,effectiveStatus:issues.length?'needs_sync':chapter.recordedStatus||'pending'};
 }

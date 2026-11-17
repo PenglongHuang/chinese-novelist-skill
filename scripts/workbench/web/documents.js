@@ -42,9 +42,15 @@ export function extractReadingContent(markdown) {
 }
 
 export function countNarrative(markdown) {
-  const extracted=extractReadingContent(markdown);
-  const text=extracted.markdown.replace(/^ {0,3}#{1,6}\s+.*$/gm,'').replace(/!\[[^\]]*\]\([^)]*\)/g,'');
-  return {wordCount:(text.match(/[一-鿿]/g)||[]).length,mode:extracted.mode};
+  /* 单一事实源：跳过首个「#…章」标题行，剥 Markdown 标记后数汉字。
+     skill CLI（check_chapter_wordcount.mjs）与书房实测、章节状态校验共用此函数。 */
+  const lines=markdown.split('\n');
+  const heading=lines.findIndex(line=>line.startsWith('#')&&line.includes('章'));
+  const text=lines.slice(heading<0?0:heading+1).join('\n')
+    .replace(/#{1,6}\s*/g,'').replace(/\*\*(.*?)\*\*/g,'$1')
+    .replace(/\*(.*?)\*/g,'$1').replace(/~~(.*?)~~/g,'$1')
+    .replace(/`(.*?)`/g,'$1').replace(/\[(.*?)\]\(.*?\)/g,'$1');
+  return (text.match(/[一-鿿]/g)||[]).length;
 }
 
 function summarySections(markdown) {

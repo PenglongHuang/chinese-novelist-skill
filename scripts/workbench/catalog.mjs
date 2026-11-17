@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { idFor, safeFile, versionFor } from './paths.mjs';
+import { readPreferencesFile, normalizePreferences, serializePreferences } from './preferences.mjs';
 import { countNarrative } from './web/documents.js';
 import { collectSummaries, inspectStatus } from './inspection.mjs';
 
@@ -24,6 +25,19 @@ export async function createCatalog(workspacePath) {
   let projects = new Map(), resources = new Map(), version = '', warnings = [], queue = Promise.resolve();
   const plans = new Map(), planMissing = new Map(), contentCache = new Map();
   const observations=new Map(),summaryViews=new Map();
+  /* 工作区偏好（根目录 user-preferences.json）：随每轮扫描刷新，内容指纹计入版本号，文件变化同样触发 SSE */
+  let prefsSnapshot={stat:'',raw:'',preferences:null};
+  async function scanPreferences(){
+    try{
+      const info=await safeFile(workspace,workspace,'user-preferences.json');
+      const stat=versionFor(info.stat);
+      if(prefsSnapshot.stat===stat)return;
+      const {raw,preferences}=await readPreferencesFile(workspace);
+      prefsSnapshot={stat,raw,preferences};
+    }catch{
+      if(prefsSnapshot.preferences!==null)prefsSnapshot={stat:'',raw:'',preferences:null};
+    }
+  }
 
   async function entries(directory) {
     try { return await fs.readdir(directory, { withFileTypes: true }); }
@@ -35,6 +49,7 @@ export async function createCatalog(workspacePath) {
   }
   async function scan() {
     const next = new Map(), nextResources = new Map(); warnings = [];
+    await scanPreferences();
     let candidates = [];
     try {
       const actual = await fs.realpath(workspace);
@@ -65,7 +80,7 @@ export async function createCatalog(workspacePath) {
         const cached=observations.get(key);
         if(cached?.version===resource.version)return cached;
         const info=await safeFile(workspace,directory,file),text=await fs.readFile(info.path,'utf8');
-        const value={text,contentHash:idFor(text),version:resource.version,...countNarrative(text)};observations.set(key,value);return value;
+        const value={text,contentHash:idFor(text),version:resource.version,wordCount:countNarrative(text)};observations.set(key,value);return value;
       }
       let plan = null;
       const planDoc = docs.find(d => d.kind === 'plan');
@@ -134,11 +149,18 @@ export async function createCatalog(workspacePath) {
     const changedDocuments = [...new Set([...resources.keys(), ...nextResources.keys()])].filter(id => resources.get(id)?.version !== nextResources.get(id)?.version);
     projects = next; resources = nextResources;
     for(const id of plans.keys())if(!projects.has(id)){plans.delete(id);planMissing.delete(id);}
-    version = idFor(JSON.stringify([...projects]) + JSON.stringify(warnings));
+    recomputeVersion();
     for (const key of contentCache.keys()) if (!resources.has(key)) contentCache.delete(key);
     return { version, changedProjects, changedDocuments };
   }
   function refresh() { queue = queue.then(scan, scan); return queue; }
+  function recomputeVersion() { version = idFor(JSON.stringify([...projects]) + JSON.stringify(warnings) + prefsSnapshot.raw); }
+  /* 保存偏好后的窄更新：只动偏好快照与版本指纹，不触发全工作区重扫描（stat 置空让下一轮轮询重读一次文件对齐 stat） */
+  function updatePreferences(document) {
+    prefsSnapshot = { stat: '', raw: serializePreferences(document), preferences: normalizePreferences(document) };
+    recomputeVersion();
+    return version;
+  }
   async function resolveResource(projectId, docId) {
     const resource = resources.get(`${projectId}/${docId}`);
     if (!resource) throw errorWith('找不到此资料', 404);
@@ -182,5 +204,5 @@ export async function createCatalog(workspacePath) {
     return { data: await fs.readFile(info.path), extension: path.extname(relative).toLowerCase() };
   }
   await refresh();
-  return { workspace, refresh, listProjects: () => [...projects.values()].sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || '')), getProject: id => projects.get(id) || null, readDocument, readAsset, get version() { return version; }, get warnings() { return warnings; } };
+  return { workspace, refresh, updatePreferences, listProjects: () => [...projects.values()].sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || '')), getProject: id => projects.get(id) || null, readDocument, readAsset, get version() { return version; }, get warnings() { return warnings; }, get preferences() { return prefsSnapshot.preferences; } };
 }

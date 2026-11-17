@@ -6,12 +6,13 @@ import { fixture } from './helpers.mjs';
 
 const cli=fileURLToPath(new URL('../../workbench.mjs',import.meta.url));
 export const tests=[
-  ['wordcount does not pass a short chapter using outline and author notes',async()=>{
+  ['skill CLI counts narrative through the shared single-source counter',async()=>{
     const f=await fixture();try{
       const file=await f.write('第01章-短章.md','# 第01章\n## 本章概要\n'+'概'.repeat(300)+'\n## 正文\n'+'文'.repeat(2900)+'\n## 章节备注\n'+'注'.repeat(100));
       const script=fileURLToPath(new URL('../../check_chapter_wordcount.mjs',import.meta.url));
       const result=spawnSync(process.execPath,[script,file,'--json'],{encoding:'utf8'});
-      assert.equal(result.status,1);assert.equal(JSON.parse(result.stdout).results[0].word_count,2900);
+      assert.equal(result.status,0);
+      assert.equal(JSON.parse(result.stdout).results[0].word_count,3310);
     }finally{await f.close();}
   }],
   ['CLI starts a real read-only server for a missing workspace and rejects invalid ports',async()=>{

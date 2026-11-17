@@ -87,7 +87,7 @@ try {
   await page.locator('[data-status-filter="pending"]').click({timeout:2500});
   assert.equal(await page.locator('.progress-row').count(),1);
   await page.locator('[data-status-filter="needs_sync"]').click();assert.equal(await page.locator('.progress-row').count(),3);
-  assert((await page.locator('#content').innerText()).includes('实测'));
+  assert.equal(await page.locator('.record-details, .site-footer').count(),0);
   await page.locator('[data-status-filter="all"]').click();
   await page.locator('[data-view="read"]').click();await page.waitForSelector('.markdown h1');
   assert(page.url().includes('/read/'),'default reader route includes the selected chapter');

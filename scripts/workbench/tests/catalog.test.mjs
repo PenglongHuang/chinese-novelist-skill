@@ -6,6 +6,20 @@ import { createCatalog } from '../catalog.mjs';
 import { updateChapter } from '../state.mjs';
 
 export const tests = [
+  ['current completed chapters need no legacy hashes or summary gate',async()=>{
+    const f=await fixture();try{
+      await f.write('book/02-写作计划.json',{minWordsPerChapter:2,chapters:[{chapterNumber:1,filePath:'第01章.md',status:'completed',wordCount:9,wordCountPass:true,validation:{status:'passed',issues:[]}}]});
+      await f.write('book/第01章.md','# 第01章 标题\n## 本章概要\n概要\n## 正文\n正文\n## 章节备注\n备注');
+      const c=await createCatalog(f.root),chapter=c.listProjects()[0].chapters[0];
+      assert.equal(chapter.actualWordCount,16);
+      // The deliberate mismatch remains visible; lack of hashes or summary is not an issue.
+      assert.deepEqual(chapter.syncIssues,['字数记录未同步']);
+      const file='book/02-写作计划.json';
+      await f.write(file,{minWordsPerChapter:2,chapters:[{chapterNumber:1,filePath:'第01章.md',status:'completed',wordCount:16,wordCountPass:true}]});
+      await c.refresh();assert.equal(c.listProjects()[0].chapters[0].effectiveStatus,'completed');
+      assert.deepEqual(c.listProjects()[0].chapters[0].syncIssues,[]);
+    }finally{await f.close();}
+  }],
   ['planned summary shells show missing coverage until real events are saved',async()=>{
     const f=await fixture();try{
       await f.write('book/02-写作计划.json',{minWordsPerChapter:1,totalChapters:2,chapters:[1,2].map(chapterNumber=>({chapterNumber,filePath:`第0${chapterNumber}章.md`,status:'pending'}))});
@@ -16,11 +30,11 @@ export const tests = [
       assert.equal(c.getProject(id).summaryCoverage.available,1);assert.deepEqual(c.getProject(id).summaryCoverage.missing,[2]);
     }finally{await f.close();}
   }],
-  ['invalidates completion after only the canonical summary changes',async()=>{
+  ['summary changes do not invalidate the recorded writing status',async()=>{
     const f=await fixture();try{
       await f.write('book/02-写作计划.json',{minWordsPerChapter:1,chapters:[{chapterNumber:1,filePath:'第01章.md',status:'validating'}]});await f.write('book/第01章.md','正文');await f.write('book/99-章节摘要.md','## 第1章\n离开');
       await updateChapter(f.root+'/book',1,'completed');const c=await createCatalog(f.root);assert.equal(c.listProjects()[0].chapters[0].effectiveStatus,'completed');
-      await f.write('book/99-章节摘要.md','## 第1章\n没有离开');await c.refresh();assert.equal(c.listProjects()[0].chapters[0].effectiveStatus,'needs_sync');
+      await f.write('book/99-章节摘要.md','## 第1章\n没有离开');await c.refresh();assert.equal(c.listProjects()[0].chapters[0].effectiveStatus,'completed');
     }finally{await f.close();}
   }],
   ['observes stale pending chapters and previews unmerged summaries without writing',async()=>{

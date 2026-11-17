@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import http from 'node:http';
 
 export async function fixture() {
   const base = path.resolve(process.env.WORKBENCH_TEST_TEMP || os.tmpdir());
@@ -19,6 +20,17 @@ export async function fixture() {
       await fs.rm(root, { recursive: true, force: true });
     },
   };
+}
+
+/* HTTP 请求助手：返回 {status, headers, body}，供 server/preferences 测试共用 */
+export function request(url, options = {}) {
+  return new Promise((resolve, reject) => {
+    const req = http.request(url, options, res => {
+      let body = ''; res.setEncoding('utf8'); res.on('data', chunk => body += chunk);
+      res.on('end', () => resolve({ status: res.statusCode, headers: res.headers, body }));
+    });
+    req.on('error', reject); req.end(options.body);
+  });
 }
 
 export const plan = (name = '同名作品') => ({

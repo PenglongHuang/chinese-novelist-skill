@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 
 export const idFor = value => createHash('sha256').update(value).digest('hex').slice(0, 20);
 export const versionFor = stat => `${stat.mtimeMs}:${stat.size}:${stat.ino}`;
@@ -25,4 +25,10 @@ export async function safeFile(workspace, project, relative) {
   const stat = await fs.stat(actualFile);
   if (!stat.isFile()) throw Object.assign(new Error('资源不是文件'), { status: 404 });
   return { path: actualFile, stat };
+}
+/* 原子写：临时文件 + rename，失败时清理临时文件（章节状态与偏好保存共用） */
+export async function atomicWrite(file, text) {
+  const temporary = `${file}.${randomUUID()}.tmp`;
+  try { await fs.writeFile(temporary, text); await fs.rename(temporary, file); }
+  finally { await fs.unlink(temporary).catch(() => {}); }
 }
