@@ -25,12 +25,21 @@
 - **多种写作模式** - 串行 / 子Agent并行 / Agent Teams，按需选择
 - **检查与润色** - 逐章审读连贯性与表达，脚本检查字数，不达标时修复
 - **章节衔接** - 记录人物处境与事件后果，承接未解悬念
+- **小说书房** - 本地只读书房：黑白墨格界面浏览进度、正文与创作资料，随文件变化自动更新
 
 ## 🚀 快速开始
 
 安装 Skill：`npx skills add PenglongHuang/chinese-novelist-skill`
 
 装好后，说一句：`使用 chinese-novelist 帮我写一部小说`
+
+### 打开小说书房（本地只读可视化）
+
+```bash
+node "<skill 安装目录>/scripts/workbench.mjs" --workspace "<作品集合目录>"
+```
+
+打开终端打印的本地地址即可。本地只读、随文件变化自动更新，详见 [工作台使用流程](references/flows/workbench.md)。
 
 ## 赞助商
 
