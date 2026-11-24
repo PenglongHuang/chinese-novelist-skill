@@ -5,13 +5,13 @@ import { TYPOGRAPHY } from './reader.js';
 import { number } from './views.js';
 
 /* 选项池与 chinese-novelist 问答流程（phase1 三层）一致；均支持 Other 自定义 */
-export const PREF_FIELDS=[
+const PREF_FIELDS=[
   {key:'favoriteGenres',label:'偏好题材',options:['悬疑推理','都市犯罪','历史架空','科幻','奇幻','言情','武侠','现实主义','谍战']},
   {key:'preferredProtagonist',label:'主角类型',options:['男性主角（独角戏）','女性主角（独角戏）','双主角（对手戏 / 双线）','群像戏（多线叙事）']},
   {key:'preferredPerspective',label:'叙事视角',options:['第一人称','第三人称限制视角','第三人称全知视角','多视角切换']},
   {key:'preferredTone',label:'故事基调',options:['紧张刺激','温情治愈','轻松幽默','沉重深刻']},
 ];
-export const LIST_FIELDS=[{key:'styleReferences',label:'风格参考'},{key:'dislikes',label:'雷点'}];
+const LIST_FIELDS=[{key:'styleReferences',label:'风格参考'},{key:'dislikes',label:'雷点'}];
 const EDITABLE_KEYS=[...PREF_FIELDS.map(f=>f.key),...LIST_FIELDS.map(f=>f.key),'typicalChapterCount'];
 
 /* 宽容归一化：服务端给什么形状都能变成 v2；异常时返回 null（未初始化） */
@@ -28,7 +28,7 @@ export function clientPreferences(raw){
   return prefs;
 }
 
-export const settingsTabs=[['workspace','工作区偏好'],['typography','全局排版']];
+const settingsTabs=[['workspace','工作区偏好'],['typography','全局排版']];
 export const settingsRail=active=>`<nav class="set-rail" aria-label="设置分组">${settingsTabs.map(([key,label])=>`<button type="button" class="set-tab" role="tab" data-settings-tab="${key}" aria-selected="${key===active}">${label}</button>`).join('')}</nav>`;
 
 export const chipHtml=(key,value,{custom=false,pressed=false}={})=>`<button type="button" class="pref-chip${custom?' custom':''}" data-pref-key="${e(key)}" data-pref-value="${e(value)}" aria-pressed="${pressed}"${custom?' title="点击移除"':''}>${e(value)}${custom?'<span class="chip-x" aria-hidden="true">×</span>':''}</button>`;
@@ -51,7 +51,7 @@ export function workspacePanel(prefs){
   const history=prefs.creationHistory.length?(()=>{
     const words=prefs.creationHistory.reduce((n,h)=>n+(Number(h.words)||0),0);
     const rowsTable=prefs.creationHistory.map(h=>`<tr><td><b>《${e(String(h.title||''))}》</b></td><td>${Number.isFinite(Number(h.chapters))?e(String(h.chapters))+' 章':'—'}</td><td>${Number.isFinite(Number(h.words))?number(h.words):'—'}</td><td>${e(String(h.genre||'—'))}</td><td>${e(String(h.finishedAt||'—'))}</td></tr>`).join('');
-    return `<div class="set-row set-history"><span class="set-row-label">创作履历</span><div class="set-history-main"><p class="set-history-meta">已完成 ${prefs.creationHistory.length} 部 · 共 ${number(words)} 字<span class="set-history-note">由 chinese-novelist 维护，此处只读</span></p><div class="table-scroll"><table class="set-table"><thead><tr><th>书名</th><th>章节</th><th>字数</th><th>题材</th><th>完成</th></tr></thead><tbody>${rowsTable}</tbody></table></div></div></div>`;
+    return `<div class="set-row set-history"><span class="set-row-label">创作履历</span><div class="set-history-main"><p class="set-history-meta">已完成 ${prefs.creationHistory.length} 部 · 共 ${number(words)} 字。<span class="set-history-note">由 chinese-novelist 维护，此处只读。</span></p><div class="table-scroll"><table class="set-table"><thead><tr><th>书名</th><th>章节</th><th>字数</th><th>题材</th><th>完成</th></tr></thead><tbody>${rowsTable}</tbody></table></div></div></div>`;
   })():`<div class="set-row set-history"><span class="set-row-label">创作履历</span><div class="set-history-main"><p class="set-history-meta">还没有完成的作品，写完一部后会自动记入。</p></div></div>`;
   return `<div class="set-body"><div class="set-group">口味</div>${rows}${countRow}${listRows}<div class="set-divider"></div><div class="set-group">履历</div>${history}</div>`;
 }

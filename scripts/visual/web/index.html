@@ -43,7 +43,7 @@
     <div id="project-notices" class="project-notices" role="status"></div>
     <div id="book-header" class="book-header" hidden></div>
     <nav id="navigation" class="view-tabs" aria-label="作品视图" hidden></nav>
-    <nav id="doc-tabs" class="view-tabs sub" aria-label="资料分类" hidden></nav>
+    <nav id="doc-tabs" class="view-tabs" aria-label="资料分类" hidden></nav>
     <main id="content" tabindex="-1"><p class="empty">正在读取工作区…</p></main>
   </div>
   <nav id="mobile-tabs" class="mobile-tabs" aria-label="作品视图" hidden></nav>
@@ -54,7 +54,10 @@
     <p class="muted">输入小说集合目录或单部小说目录的绝对路径。本地只读，不会复制或上传文件。</p>
     <form id="workspace-form">
       <label for="workspace-path">目录绝对路径</label>
-      <input id="workspace-path" required placeholder="例如 B:\写作\chinese-novelist">
+      <div class="workspace-row">
+        <input id="workspace-path" required placeholder="例如 B:\写作\chinese-novelist">
+        <button type="button" id="workspace-browse" class="ghost-btn">浏览…</button>
+      </div>
       <p id="workspace-error" class="warning" role="alert"></p>
       <div class="dialog-actions"><button type="submit" class="solid-btn">打开目录</button><button type="button" class="ghost-btn" data-close-dialog="workspace-dialog">取消</button></div>
     </form>

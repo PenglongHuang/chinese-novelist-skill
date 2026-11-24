@@ -45,20 +45,18 @@ export function applyTypography() {
   document.documentElement.style.setProperty('--reader-size',`${clamp(TYPOGRAPHY.fontSize,readPreference('fontSize',TYPOGRAPHY.fontSize.default))}px`);
   document.documentElement.style.setProperty('--reader-leading',String(clamp(TYPOGRAPHY.lineHeight,readPreference('lineHeight',TYPOGRAPHY.lineHeight.default))));
 }
-export function applyReaderFont(){
-  const rule=TYPOGRAPHY.readerFont,font=readPreference('readerFont',rule.default);
-  document.documentElement.dataset.readerFont=rule.values.includes(font)?font:rule.default;
-  document.querySelectorAll('[data-reader-font]').forEach(el=>{if(el.tagName==='BUTTON')el.setAttribute('aria-pressed',String(el.dataset.readerFont===font));});
-}
+/* 字体两键（readerFont/uiFont）同一套逻辑：根元素 data-* 切 CSS 作用域，选项按钮同步 aria */
+const applyFont=key=>{
+  const rule=TYPOGRAPHY[key],font=readPreference(key,rule.default),attr=key.replace(/[A-Z]/g,m=>'-'+m.toLowerCase());
+  document.documentElement.dataset[key]=rule.values.includes(font)?font:rule.default;
+  document.querySelectorAll(`[data-${attr}]`).forEach(el=>{if(el.tagName==='BUTTON')el.setAttribute('aria-pressed',String(el.dataset[key]===font));});
+};
+export function applyReaderFont(){applyFont('readerFont');}
 export function applyUiTypography(){
   document.documentElement.style.setProperty('--ui-size',`${clamp(TYPOGRAPHY.uiFontSize,readPreference('uiFontSize',TYPOGRAPHY.uiFontSize.default))}px`);
   document.documentElement.style.setProperty('--ui-leading',String(clamp(TYPOGRAPHY.uiLineHeight,readPreference('uiLineHeight',TYPOGRAPHY.uiLineHeight.default))));
 }
-export function applyUiFont(){
-  const rule=TYPOGRAPHY.uiFont,font=readPreference('uiFont',rule.default);
-  document.documentElement.dataset.uiFont=rule.values.includes(font)?font:rule.default;
-  document.querySelectorAll('[data-ui-font]').forEach(el=>{if(el.tagName==='BUTTON')el.setAttribute('aria-pressed',String(el.dataset.uiFont===font));});
-}
+export function applyUiFont(){applyFont('uiFont');}
 export function applyReaderIndent(){
   document.documentElement.dataset.readerIndent=readPreference('readerIndent',TYPOGRAPHY.readerIndent.default)===false?'false':'true';
 }

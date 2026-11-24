@@ -1,6 +1,6 @@
 const requested = process.argv.slice(2);
 let passed = 0;
-for (const group of ['catalog', 'server', 'preferences', 'documents', 'cli', 'state']) {
+for (const group of ['catalog', 'server', 'preferences', 'documents', 'analysis', 'cli', 'state']) {
   if (requested.length && !requested.includes(group)) continue;
   try {
     const { tests } = await import(`./${group}.test.mjs`);

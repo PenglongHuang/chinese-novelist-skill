@@ -25,6 +25,22 @@ export const tests=[
       assert.equal(result.projects.length,0);assert(result.warnings.length);assert(result.restartCommand.includes('--port'));
     } finally {if(child&&child.exitCode===null){const exited=new Promise(r=>child.once('exit',r));child.kill();await exited;}await f.close();}
   }],
+  ['CLI reuses an already running workbench on the same port instead of starting a second one',async()=>{
+    const f=await fixture();let first;
+    try {
+      await f.write('book/第01章-一.md','# 第01章\n## 正文\n'+'一'.repeat(100));
+      first=spawn(process.execPath,[cli,'--workspace',f.root,'--port','0'],{stdio:['ignore','pipe','pipe']});
+      const url=await new Promise((resolve,reject)=>{let text='';const timer=setTimeout(()=>reject(new Error('CLI did not start')),5000);first.once('error',reject);first.once('exit',code=>{if(code)reject(new Error('CLI exited '+code));});first.stdout.on('data',chunk=>{text+=chunk;const match=text.match(/http:\/\/127\.0\.0\.1:(\d+)\//);if(match){clearTimeout(timer);resolve(match[1]);}});});
+      /* 同端口再跑一次：探活命中，打印复用横幅并立即退出，不产生第二个进程 */
+      const again=spawnSync(process.execPath,[cli,'--workspace',f.root,'--port',url],{encoding:'utf8'});
+      assert.equal(again.status,0);
+      assert.match(again.stdout,/已在运行，直接复用/);
+      assert.match(again.stdout,new RegExp(`http://127\\.0\\.0\\.1:${url}/`));
+      /* 复用后原实例仍在服务 */
+      const result=await new Promise((resolve,reject)=>http.get(`http://127.0.0.1:${url}/api/projects`,res=>{let text='';res.on('data',chunk=>text+=chunk);res.on('end',()=>resolve(JSON.parse(text)));}).on('error',reject));
+      assert.equal(result.projects.length,1);
+    } finally {if(first&&first.exitCode===null){const exited=new Promise(r=>first.once('exit',r));first.kill();await exited;}await f.close();}
+  }],
   ['existing wordcount CLI preserves single/batch JSON counts and failure exit codes',async()=>{
     const f=await fixture();
     try {

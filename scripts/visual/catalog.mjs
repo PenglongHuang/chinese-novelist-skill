@@ -4,6 +4,7 @@ import { idFor, safeFile, versionFor } from './paths.mjs';
 import { readPreferencesFile, normalizePreferences, serializePreferences } from './preferences.mjs';
 import { countNarrative } from './web/documents.js';
 import { collectSummaries, inspectStatus } from './inspection.mjs';
+import { buildReport } from './analysis.mjs';
 
 const artifacts = {
   people: '00-人物档案.md', outline: '01-大纲.md', plan: '02-写作计划.json',
@@ -25,6 +26,8 @@ export async function createCatalog(workspacePath) {
   let projects = new Map(), resources = new Map(), version = '', warnings = [], queue = Promise.resolve();
   const plans = new Map(), planMissing = new Map(), contentCache = new Map();
   const observations=new Map(),summaryViews=new Map();
+  /* 审读报告缓存：按作品指纹（章节/档案/写作计划的版本）复用，文件变化自动失效；同指纹并发请求共享同一次计算 */
+  const analysisCache=new Map(),analysisPending=new Map();
   /* 工作区偏好（根目录 user-preferences.json）：随每轮扫描刷新，内容指纹计入版本号，文件变化同样触发 SSE */
   let prefsSnapshot={stat:'',raw:'',preferences:null};
   async function scanPreferences(){
@@ -125,7 +128,8 @@ export async function createCatalog(workspacePath) {
         Object.assign(chapter,inspectStatus(chapter,minimum));
         if(!summary)missing.push(chapter.number);
       }
-      const summaryText='# 章节摘要\n\n'+[...summaries.entries.values()].sort((a,b)=>a.number-b.number).map(entry=>`${entry.markdown.split('\n')[0]}\n\n> 来源：${entry.name}${entry.kind==='batch'?'（未汇总）':entry.kind==='legacy'?'（旧版大纲）':''}${summaries.conflicts.has(entry.number)?'；存在冲突，需核对':''}\n\n${entry.body}`).join('\n\n');
+      /* 来源行只在非正典或冲突时显示：单一正典来源重复 N 次没有信息量 */
+      const summaryText='# 章节摘要\n\n'+[...summaries.entries.values()].sort((a,b)=>a.number-b.number).map(entry=>`${entry.markdown.split('\n')[0]}\n\n${entry.kind==='canonical'&&!summaries.conflicts.has(entry.number)?'':`> 来源：${entry.name}${entry.kind==='batch'?'（未汇总）':entry.kind==='legacy'?'（旧版大纲）':''}${summaries.conflicts.has(entry.number)?'；存在冲突，需核对':''}\n\n`}${entry.body}`).join('\n\n');
       const summaryVersion=idFor(summaryText);summaryViews.set(id,{text:summaryText,version:summaryVersion,stale:false,warnings:[],assets:{}});
       nextResources.set(`${id}/summary-view`,{id:'summary-view',name:'章节摘要汇总视图',fileName:'99-章节摘要.md',directory,exists:true,version:summaryVersion});
       let outline = '';
@@ -149,6 +153,7 @@ export async function createCatalog(workspacePath) {
     const changedDocuments = [...new Set([...resources.keys(), ...nextResources.keys()])].filter(id => resources.get(id)?.version !== nextResources.get(id)?.version);
     projects = next; resources = nextResources;
     for(const id of plans.keys())if(!projects.has(id)){plans.delete(id);planMissing.delete(id);}
+    for(const id of analysisCache.keys())if(!projects.has(id))analysisCache.delete(id);
     recomputeVersion();
     for (const key of contentCache.keys()) if (!resources.has(key)) contentCache.delete(key);
     return { version, changedProjects, changedDocuments };
@@ -203,6 +208,47 @@ export async function createCatalog(workspacePath) {
     const info = await safeFile(workspace, any.directory, relative);
     return { data: await fs.readFile(info.path), extension: path.extname(relative).toLowerCase() };
   }
+  /* 审读：请求时惰性计算并缓存；正文读取复用 observations 版本缓存，避免重复 IO */
+  async function observedText(projectId, directory, fileName) {
+    /* 章节与批次摘要以文件名哈希为资源键；人物档案等固定资料以 kind 为键，按文件名回退查找 */
+    let resource = resources.get(`${projectId}/${idFor(fileName)}`);
+    if (!resource) resource = [...resources.values()].find(r => r.directory === directory && r.fileName === fileName && r.exists);
+    if (!resource) return null;
+    const key = `${projectId}/${fileName}`, cached = observations.get(key);
+    if (cached?.version === resource.version) return cached;
+    const info = await safeFile(workspace, directory, fileName);
+    const text = await fs.readFile(info.path, 'utf8');
+    const value = { text, contentHash: idFor(text), version: resource.version, wordCount: countNarrative(text) };
+    observations.set(key, value);
+    return value;
+  }
+  async function analyze(projectId) {
+    const project = projects.get(projectId);
+    if (!project) throw errorWith('作品不存在', 404);
+    const docVersion = kind => resources.get(`${projectId}/${kind}`)?.version || '';
+    /* 计划也在指纹里：校验阶段会把 validatedContentHash/摘要指纹/字数门槛写回 02-写作计划.json，报告据此才知道「校验结论过期」已解除 */
+    const fingerprint = idFor(JSON.stringify([
+      docVersion('people'), docVersion('plan'),
+      project.chapters.map(c => [c.fileName, c.version, c.actualContentHash, c.actualSummaryHash, c.actualWordCount, c.summarySource, c.syncIssues]),
+    ]));
+    const cached = analysisCache.get(projectId);
+    if (cached && cached.fingerprint === fingerprint) return { version: fingerprint, report: cached.report };
+    const building = analysisPending.get(projectId);
+    if (building && building.fingerprint === fingerprint) return building.promise;
+    const promise = (async () => {
+      /* scan() 对每个入册作品都会登记 summary-view 资源（含所在目录），能查到作品就必能查到目录 */
+      const directory = resources.get(`${projectId}/summary-view`)?.directory;
+      const texts = [];
+      for (const chapter of project.chapters) texts.push(await observedText(projectId, directory, chapter.fileName).then(value => value?.text ?? null).catch(() => null));
+      const profileText = (await observedText(projectId, directory, artifacts.people).catch(() => null))?.text || '';
+      const report = buildReport(project, { texts, profileText });
+      analysisCache.set(projectId, { fingerprint, report });
+      return { version: fingerprint, report };
+    })();
+    analysisPending.set(projectId, { fingerprint, promise });
+    try { return await promise; }
+    finally { if (analysisPending.get(projectId)?.promise === promise) analysisPending.delete(projectId); }
+  }
   await refresh();
-  return { workspace, refresh, updatePreferences, listProjects: () => [...projects.values()].sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || '')), getProject: id => projects.get(id) || null, readDocument, readAsset, get version() { return version; }, get warnings() { return warnings; }, get preferences() { return prefsSnapshot.preferences; } };
+  return { workspace, refresh, updatePreferences, analyze, listProjects: () => [...projects.values()].sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || '')), getProject: id => projects.get(id) || null, readDocument, readAsset, get version() { return version; }, get warnings() { return warnings; }, get preferences() { return prefsSnapshot.preferences; } };
 }

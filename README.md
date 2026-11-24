@@ -39,7 +39,7 @@
 node "<skill 安装目录>/scripts/visual/workbench.mjs" --workspace "<作品集合目录>"
 ```
 
-打开终端打印的本地地址即可。本地只读、随文件变化自动更新，详见 [工作台使用流程](references/flows/workbench.md)。
+打开终端打印的本地地址即可。本地只读、随文件变化自动更新；`--workspace` 可省（默认当前目录的 `.chinese-novelist/`），重复启动会自动复用已有实例。由 Agent / 脚本调用时请加 `--detach`：命令立即返回、服务留在后台（默认端口 5112，已运行自动复用），日志在系统临时目录。
 
 ## 赞助商
 
@@ -92,6 +92,22 @@ node "<skill 安装目录>/scripts/visual/workbench.mjs" --workspace "<作品集
 <p align="center">
   <img src="assets/memory-demo.png" width="600"/>
 </p>
+
+
+## 📖 小说书房
+
+写完的章节不再是散落的文件：启动本地书房，书架、章节进度、正文与创作资料一目了然，文件变动实时刷新；审读报告还会对全书做机械比对——节奏突变、人物断档、口头禅落实，尽收眼底。
+
+<table>
+  <tr>
+    <td align="center"><b>书架 · 全部作品与进度</b></td>
+    <td align="center"><b>审读报告 · 全书体检</b></td>
+  </tr>
+  <tr>
+    <td><img src="assets/workbench-shelf.png" width="400"/></td>
+    <td><img src="assets/workbench-report.png" width="400"/></td>
+  </tr>
+</table>
 
 
 ## 创作流程
@@ -206,7 +222,7 @@ AI 生成人物档案、章节大纲和写作计划，展示给你确认：
 ## 📂 输出样例
 
 ```
-chinese-novelist/
+.chinese-novelist/
 ├── user-preferences.json              # 用户偏好（跨项目共享）
 └── 20260412-143000-午夜列车/
     ├── 01-大纲.md                      # 故事概述、章节规划+ 设定词典

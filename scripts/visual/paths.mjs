@@ -4,11 +4,11 @@ import { createHash, randomUUID } from 'node:crypto';
 
 export const idFor = value => createHash('sha256').update(value).digest('hex').slice(0, 20);
 export const versionFor = stat => `${stat.mtimeMs}:${stat.size}:${stat.ino}`;
-export function within(root, target) {
+function within(root, target) {
   const relative = path.relative(root, target);
   return relative === '' || (!relative.startsWith(`..${path.sep}`) && relative !== '..' && !path.isAbsolute(relative));
 }
-export function relativeTarget(root, relative) {
+function relativeTarget(root, relative) {
   if (typeof relative !== 'string' || !relative || path.isAbsolute(relative) || relative.includes('\0') || /^[a-z]+:/i.test(relative)) {
     throw Object.assign(new Error('资源路径不可用'), { status: 403 });
   }
