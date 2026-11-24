@@ -11,7 +11,7 @@
 按 skill 安装目录的绝对路径调用：
 
 ```bash
-node "{skillBaseDir}/scripts/validate_project.mjs" "{项目目录绝对路径}" --json
+node "{skillBaseDir}/scripts/writing/validate_project.mjs" "{项目目录绝对路径}" --json
 ```
 
 脚本按计划逐章检查状态，调用原字数脚本读取正文并统计，字数口径不变，下限取本书 `minWordsPerChapter`（缺省 3000）。不单独检查文件存在性，不检查章节摘要。

@@ -4,7 +4,7 @@
 
 执行以下步骤：
 
-1. **创建项目文件夹**：`./chinese-novelist/{YYYYMMDD-HHmmss}-{Layer 3 确认的标题}/`（相对当前工作目录，使用用户在 Layer 3 选定的小说标题）
+1. **创建项目文件夹**：`./.chinese-novelist/{YYYYMMDD-HHmmss}-{Layer 3 确认的标题}/`（相对当前工作目录，使用用户在 Layer 3 选定的小说标题）
 2. **生成人物档案**：创建 `00-人物档案.md`，使用 [character-template.md](../guides/character-template.md) 模板，参考 [character-building.md](../guides/character-building.md) 创建主角、反派、配角档案。**人物档案必须详细**：每个角色的性格核心、致命缺陷、说话风格/口头禅、恐惧/弱项、背景故事都要具体到可以直接指导写作的程度
 3. **生成大纲**：创建 `01-大纲.md`，使用 [outline-template.md](../guides/outline-template.md) 模板，参考 [plot-structures.md](../guides/plot-structures.md) 填入完整的章节规划。**大纲必须以人物驱动情节** 参照 `00-人物档案.md`，确保情节服务于人物成长弧线
 3.5. **生成文风基准**：创建 `03-文风基准.md`，包含四部分：
@@ -17,13 +17,14 @@
    {
      "version": 1,
      "novelName": "[小说名称]",
-     "projectPath": "./chinese-novelist/{timestamp}-[小说名称]",
+     "projectPath": "./.chinese-novelist/{timestamp}-[小说名称]",
      "totalChapters": [章节数],
      "minWordsPerChapter": [用户确认的每章最低字数],
      "createdAt": "[ISO时间]",
      "updatedAt": "[ISO时间]",
      "status": "planning",
      "writingMode": "[serial|subagent-parallel|agent-teams]",
+     "batchSize": "[仅 subagent-parallel：每批章数，可省略]",
      "chapters": [
        {
          "chapterNumber": 1,
@@ -42,7 +43,7 @@
 
 5. **创建章节摘要文件**：写作计划保存后，调用安装目录的绝对路径：
    ```bash
-   node "{skillBaseDir}/scripts/init_chapter_summaries.mjs" "{项目目录绝对路径}" --json
+   node "{skillBaseDir}/scripts/writing/init_chapter_summaries.mjs" "{项目目录绝对路径}" --json
    ```
    脚本读取写作计划，预建全部 `## 第{XX}章 {标题}` 小节，标题下留空；再次运行只补缺失标题，保留已有内容。退出码：0=成功，1=框架冲突（见 `issues`），2=参数或文件错误。
 
@@ -65,6 +66,6 @@ Options:
 ```
 
 用户选择后：
-- 更新 `02-写作计划.json` 的 `writingMode` 字段
+- 更新 `02-写作计划.json` 的 `writingMode` 字段；选「子Agent并行」时用 `AskUserQuestion` 加问一句"每批几章"，把整数写入 `batchSize`（用户跳过/自定义则不写字段）
 - 更新 `status` 为 `"in_progress"`
 - 进入第三阶段：疯狂创作 → 详见 [phase3-writing.md](phase3-writing.md)

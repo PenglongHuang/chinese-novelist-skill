@@ -2,23 +2,25 @@
 
 **每次触发SKILL时首先执行：**
 
+**只读浏览分流**：如果用户只是要求查看已有小说、打开工作台或小说书房，按 SKILL.md「只读书房入口」直接启动，跳过以下偏好和创作流程；浏览本身不修改 `user-preferences.json`（用户在书房「设置」窗口里手动保存口味除外，那是用户自己的操作）。启动脚本使用 skill 安装目录绝对路径，作品集合默认取当前工作目录下的 `.chinese-novelist/`；只有用户另行提出创作或续写时才进入正常流程。
+
 ## 1. 读取用户偏好
 
 检查 `user-preferences.json` 是否存在
 - 存在 → 加载偏好数据，用于后续选项排序、推荐标记、个性化欢迎语
 - 不存在 → 使用默认值，首次交互结束后自动创建
 
-偏好文件位于当前工作目录，结构如下：
+偏好文件位于当前工作目录，结构如下（v2：口味字段全部为字符串数组）：
 
 ```json
 {
-  "version": 1,
-  "updatedAt": "[ISO时间]",
+  "version": 2,
+  "updatedAt": "[ISO日期]",
   "preferences": {
     "favoriteGenres": [],
-    "preferredProtagonist": "",
-    "preferredPerspective": "",
-    "preferredTone": "",
+    "preferredProtagonist": [],
+    "preferredPerspective": [],
+    "preferredTone": [],
     "typicalChapterCount": null,
     "styleReferences": [],
     "dislikes": [],
@@ -27,7 +29,11 @@
 }
 ```
 
-每层问答结束后静默更新本层偏好，保留已有历史并更新 `updatedAt`。用户要求记住、忘记某项或重置偏好时，按要求保存或清除。JSON 损坏时使用默认偏好并修复文件。
+- v1 里 `preferredProtagonist` / `preferredPerspective` / `preferredTone` 是单值字符串；读取时兼容两种格式（字符串视为单元素数组），写入一律用数组。
+- 数组字段保存「全部常用项」：问答中新选中的项去重追加，静默更新时整个列表覆写为当前所有常用项。
+- `typicalChapterCount` 恒为 1–500 的整数或 null；`creationHistory` 只由创作流程追加，书房设置窗口对它只读。
+
+每层问答结束后静默更新本层偏好（数组字段去重追加，不删除历史）并更新 `updatedAt`。用户要求记住、忘记某项或重置偏好时，按要求保存或清除。JSON 损坏时使用默认偏好并修复文件。书房「设置」窗口保存口味时只写口味字段，`creationHistory` 与未知字段以磁盘为准。
 
 ## 2. 快捷入口检测
 
@@ -47,7 +53,7 @@
 
 ## 4. 中断续写检测
 
-扫描 `./chinese-novelist/` 目录下的项目文件夹：
+扫描 `./.chinese-novelist/` 目录下的项目文件夹：
 
 - 查找含 `02-写作计划.json` 且 `status` 为 `"in_progress"`、`"validating"` 或 `"needs_attention"` 的项目
 - 如果找到未完成项目：

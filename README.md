@@ -25,12 +25,21 @@
 - **多种写作模式** - 串行 / 子Agent并行 / Agent Teams，按需选择
 - **检查与润色** - 逐章审读连贯性与表达，脚本检查字数，不达标时修复
 - **章节衔接** - 记录人物处境与事件后果，承接未解悬念
+- **小说书房** - 本地只读书房：黑白墨格界面浏览进度、正文与创作资料，随文件变化自动更新
 
 ## 🚀 快速开始
 
 安装 Skill：`npx skills add PenglongHuang/chinese-novelist-skill`
 
 装好后，说一句：`使用 chinese-novelist 帮我写一部小说`
+
+### 打开小说书房（本地只读可视化）
+
+```bash
+node "<skill 安装目录>/scripts/visual/workbench.mjs" --workspace "<作品集合目录>"
+```
+
+打开终端打印的本地地址即可。本地只读、随文件变化自动更新；`--workspace` 可省（默认当前目录的 `.chinese-novelist/`），重复启动会自动复用已有实例。由 Agent / 脚本调用时请加 `--detach`：命令立即返回、服务留在后台（默认端口 5112，已运行自动复用），日志在系统临时目录。
 
 ## 赞助商
 
@@ -83,6 +92,22 @@
 <p align="center">
   <img src="assets/memory-demo.png" width="600"/>
 </p>
+
+
+## 📖 小说书房
+
+写完的章节不再是散落的文件：启动本地书房，书架、章节进度、正文与创作资料一目了然，文件变动实时刷新；审读报告还会对全书做机械比对——节奏突变、人物断档、口头禅落实，尽收眼底。
+
+<table>
+  <tr>
+    <td align="center"><b>书架 · 全部作品与进度</b></td>
+    <td align="center"><b>审读报告 · 全书体检</b></td>
+  </tr>
+  <tr>
+    <td><img src="assets/workbench-shelf.png" width="400"/></td>
+    <td><img src="assets/workbench-report.png" width="400"/></td>
+  </tr>
+</table>
 
 
 ## 创作流程
@@ -197,7 +222,7 @@ AI 生成人物档案、章节大纲和写作计划，展示给你确认：
 ## 📂 输出样例
 
 ```
-chinese-novelist/
+.chinese-novelist/
 ├── user-preferences.json              # 用户偏好（跨项目共享）
 └── 20260412-143000-午夜列车/
     ├── 01-大纲.md                      # 故事概述、章节规划+ 设定词典

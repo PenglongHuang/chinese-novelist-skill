@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="light dark"><title>小说书房 · Chinese Novelist</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/styles.css">
+  <script src="/boot.js"></script>
+  <script defer src="/vendor/markdown-it.min.js"></script><script defer src="/vendor/purify.min.js"></script>
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#content">跳到内容</a>
+  <aside id="sidebar" class="sidebar" aria-label="书房导航">
+    <div class="side-head">
+      <a class="brand" href="#/">小说书房<span class="brand-en">Chinese Novelist</span></a>
+      <a class="brand-mini" href="#/" aria-label="小说书房"><svg viewBox="0 0 32 32" width="20" height="20" aria-hidden="true"><rect width="32" height="32" rx="6" fill="currentColor" opacity=".08"/><path d="M9 10h5l2.2 2 2.2-2H23v12h-4.6l-2.2 2-2.2-2H9z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M16 12v10" stroke="currentColor" stroke-width="1.6"/></svg></a>
+    </div>
+    <button id="workspace-label" class="workspace-label" type="button" title="切换工作区"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" fill="none"><path d="M12.5 3.5H6A3 3 0 0 0 3 6.5M3.5 12.5H10a3 3 0 0 0 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M10.5 1.5l2 2-2 2M5.5 14.5l-2-2 2-2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="ws-path">正在读取…</span></button>
+    <nav class="side-nav" aria-label="作品列表">
+      <div id="book-list"></div>
+    </nav>
+    <div class="side-foot">
+      <span id="connection" role="status" aria-live="polite" title="本地只读，文件变化后自动更新"><i class="conn-dot" aria-hidden="true"></i><span class="conn-text">正在连接</span></span>
+      <span class="side-foot-actions">
+        <button id="open-settings" class="icon-btn" type="button" aria-label="打开设置" title="设置"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M2 4.5h4.8M12.2 4.5H14M2 8h1.4M7.2 8H14M2 11.5h7M13.4 11.5H14"/><circle cx="9.7" cy="4.5" r="1.7"/><circle cx="5" cy="8" r="1.7"/><circle cx="11" cy="11.5" r="1.7"/></svg></button>
+        <button id="appearance-toggle" class="icon-btn" type="button" aria-label="切换深浅色" title="切换深浅色"><svg class="icon-sun" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none"><circle cx="8" cy="8" r="3.2" stroke="currentColor" stroke-width="1.3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.2 3.2l1.4 1.4M11.4 11.4l1.4 1.4M12.8 3.2l-1.4 1.4M4.6 11.4l-1.4 1.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg><svg class="icon-moon" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none"><path d="M13.5 9.7A6.2 6.2 0 0 1 6.3 2.5a6.2 6.2 0 1 0 7.2 7.2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></button>
+      </span>
+    </div>
+  </aside>
+  <button id="sidebar-toggle" class="side-handle" type="button" aria-label="收起导航" aria-expanded="true" aria-controls="sidebar"><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true" fill="none"><path d="M8 1.5L3.5 6 8 10.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <div id="sidebar-backdrop" class="backdrop" hidden></div>
+  <div class="frame">
+    <header class="topbar">
+      <button id="nav-toggle" class="icon-btn" type="button" aria-label="打开导航" aria-expanded="false" aria-controls="sidebar">
+        <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      </button>
+    </header>
+    <section id="connection-help" class="connection-help" hidden role="alert">
+      <p>连接已断开。服务仍在运行时会自动重连；服务已停止时，请在终端重新启动。</p>
+      <code id="restart-command"></code>
+      <button id="retry-connection" class="ghost-btn" type="button">重试连接</button>
+    </section>
+    <div id="project-notices" class="project-notices" role="status"></div>
+    <div id="book-header" class="book-header" hidden></div>
+    <nav id="navigation" class="view-tabs" aria-label="作品视图" hidden></nav>
+    <nav id="doc-tabs" class="view-tabs" aria-label="资料分类" hidden></nav>
+    <main id="content" tabindex="-1"><p class="empty">正在读取工作区…</p></main>
+  </div>
+  <nav id="mobile-tabs" class="mobile-tabs" aria-label="作品视图" hidden></nav>
+  <div id="doc-updated" class="update-toast" hidden role="status">内容已更新<button id="reload-document" class="text-btn" type="button">点击载入</button></div>
+  <dialog id="settings-dialog" class="sheet-dialog settings-dialog" aria-labelledby="settings-dialog-title"></dialog>
+  <dialog id="workspace-dialog" class="sheet-dialog" aria-labelledby="workspace-title">
+    <h2 id="workspace-title">打开本地工作区</h2>
+    <p class="muted">输入小说集合目录或单部小说目录的绝对路径。本地只读，不会复制或上传文件。</p>
+    <form id="workspace-form">
+      <label for="workspace-path">目录绝对路径</label>
+      <div class="workspace-row">
+        <input id="workspace-path" required placeholder="例如 B:\写作\chinese-novelist">
+        <button type="button" id="workspace-browse" class="ghost-btn">浏览…</button>
+      </div>
+      <p id="workspace-error" class="warning" role="alert"></p>
+      <div class="dialog-actions"><button type="submit" class="solid-btn">打开目录</button><button type="button" class="ghost-btn" data-close-dialog="workspace-dialog">取消</button></div>
+    </form>
+    <h3>最近打开</h3>
+    <div id="recent-workspaces" class="recent-list"></div>
+  </dialog>
+</body>
+</html>
