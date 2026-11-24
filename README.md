@@ -4,7 +4,7 @@
 
 ### 让 AI 为你写一部完整的中文小说
 
-[![Version](https://img.shields.io/badge/version-2.3.2-blue.svg)](https://github.com/PenglongHuang/chinese-novelist-skill/releases)
+[![Version](https://img.shields.io/badge/version-2.4.0-blue.svg)](https://github.com/PenglongHuang/chinese-novelist-skill/releases)
 [![Claude Code Skill](https://img.shields.io/badge/Claude_Code-Skill-blue)](https://claude.com/claude-code)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
@@ -277,10 +277,10 @@ AI 生成人物档案、章节大纲和写作计划，展示给你确认：
 
 - [GitHub Discussions](https://github.com/PenglongHuang/chinese-novelist-skill/discussions) — 使用心得、作品分享、功能想法
 - [Issues](https://github.com/PenglongHuang/chinese-novelist-skill/issues) — 问题反馈与 bug 报告
-- **微信交流群**：扫码入群
+- **微信**：交流与商务合作，扫码加我
 
 <p align="center">
-  <img src="assets/wechat-group-qr.png" width="240" alt="微信交流群二维码"/>
+  <img src="assets/wechat-personal-qr.png" width="240" alt="个人微信二维码"/>
 </p>
 
 ## 赞助
