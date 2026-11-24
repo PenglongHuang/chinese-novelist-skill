@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { startWorkbench } from './server.mjs';
 
 const args=process.argv.slice(2);
-const usage='小说只读工作台\n用法: node <skillBaseDir>/scripts/visual/workbench.mjs [--workspace <小说集合或单部小说目录>] [--port 端口] [--detach]\n--workspace 可省，默认当前目录下的 .chinese-novelist/。\n--detach 后台启动：命令立即返回，服务脱离会话存活（Agent 调用必用，否则会阻塞到超时）；后台默认端口 5112，可用 --port 覆盖，已运行则自动复用；日志在系统临时目录 novel-workbench-<端口>.log。\n前台运行时端口上已有本工具实例会自动探活复用；Ctrl+C 停止，作品文件不会被修改。';
+const usage='小说书房 · 本地只读\n用法: node <skillBaseDir>/scripts/visual/workbench.mjs [--workspace <小说集合或单部小说目录>] [--port 端口] [--detach]\n--workspace 可省，默认当前目录下的 .chinese-novelist/。\n--detach 后台启动：命令立即返回，服务脱离会话存活（Agent 调用必用，否则会阻塞到超时）；后台默认端口 5112，可用 --port 覆盖，已运行则自动复用；日志在系统临时目录 novel-workbench-<端口>.log。\n前台运行时端口上已有本工具实例会自动探活复用；Ctrl+C 停止，作品文件不会被修改。';
 
 /* 端口探活：已运行的书房实例直接复用（识别特征：/api/projects 返回带 workspace 的 JSON） */
 const probeExisting=port=>new Promise(resolve=>{
@@ -30,7 +30,7 @@ function banner({url,workspace,projects=[],reused=false,note}){
   const words=projects.reduce((n,p)=>n+(p.actualWords||0),0);
   const line=(label,value)=>`  ${c('2',label.padEnd(4,'　'))}  ${value}`;
   console.log('');
-  console.log(`  ${c('38;5;160','▍')} ${c('1','小说书房')} ${c('2',reused?'· 已在运行，直接复用':'· 本地只读工作台')}`);
+  console.log(`  ${c('38;5;160','▍')} ${c('1','小说书房')} ${c('2',reused?'· 已在运行，直接复用':'· 本地只读')}`);
   console.log(`  ${c('38;5;160','▍')} ${c('2','作品文件不会被修改 · 文件变化后自动更新')}`);
   console.log('');
   console.log(line('地址',c('1',url)));

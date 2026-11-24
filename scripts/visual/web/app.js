@@ -604,5 +604,5 @@ addEventListener('hashchange',()=>{clearTimeout(scrollTimer);if(current?.key)wri
 addEventListener('pagehide',()=>{saveScroll();events?.close();});
 history.scrollRestoration='manual';
 applyTypography();applyReaderFont();applyUiFont();applyUiTypography();applyReaderIndent();applyAppearance();applySidebarCollapsed();
-try {snapshot=await api('/api/projects');configurePreferenceScope(snapshot.workspace);workspaceInfo();q('#restart-command').textContent=snapshot.restartCommand||'请重新运行启动工作台时的 node 命令。';await display();connect();}
+try {snapshot=await api('/api/projects');configurePreferenceScope(snapshot.workspace);workspaceInfo();q('#restart-command').textContent=snapshot.restartCommand||'请重新运行启动书房时的 node 命令。';await display();connect();}
 catch(error){q('#content').innerHTML=empty('无法读取工作区',error.message);q('#connection-help').hidden=false;connect();}
