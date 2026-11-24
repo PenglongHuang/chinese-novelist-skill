@@ -2,7 +2,7 @@ export const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&a
 const slug=value=>value.normalize('NFKC').trim().toLowerCase().replace(/[^\p{L}\p{N}_-]+/gu,'-').replace(/^-|-$/g,'')||'section';
 
 export function renderMarkdown(markdown,{projectId,assets={},routeForDocument=()=>null}={}) {
-  if(!window.markdownit||!window.DOMPurify)throw new Error('阅读组件加载失败，请检查工作台安装是否完整。');
+  if(!window.markdownit||!window.DOMPurify)throw new Error('阅读组件加载失败，请检查小说书房安装是否完整。');
   const md=window.markdownit({html:false,linkify:false,typographer:false});
   /* 中文正文常按排版习惯在句中硬换行：软换行直接接排，不留半角空格（默认行为会在字缝里塞空格） */
   md.renderer.rules.softbreak=()=>'';
