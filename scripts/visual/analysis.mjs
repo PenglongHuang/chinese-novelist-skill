@@ -9,7 +9,15 @@ const cjkCount = text => (text.match(/[一-鿿]/g) || []).length;
 /* ---------- 人物档案解析 ---------- */
 /* 档案结构：## 主角/反派/配角 → ### 名字（括注可为别名或备注），正文里有「说话风格／口头禅」行 */
 /* 括注里这些词是备注或泛称呼，不是别名：泛称呼（大哥/师父…）会被正文里对任何人的称呼命中，灌水在场度 */
-const NOTE_WORDS = new Set(['已故', '去世', '回忆', '番外', '幼年', '老年', '拟写', '待定', '原型', '大哥', '大姐', '师兄', '师姐', '师父', '师傅', '父亲', '母亲', '爸爸', '妈妈', '爷爷', '奶奶', '叔叔', '舅舅', '姑姑', '哥哥', '姐姐', '弟弟', '妹妹', '儿子', '女儿', '妻子', '丈夫', '老板', '老大', '上司', '下属', '同事', '朋友', '助手', '保镖', '管家', '女主', '男主', '主角', '反派', '配角']);
+const NOTE_WORDS = new Set(['已故', '去世', '回忆', '番外', '幼年', '老年', '拟写', '待定', '原型', '大哥', '大姐', '师兄', '师姐', '师父', '师傅', '父亲', '母亲', '爸爸', '妈妈', '爷爷', '奶奶', '叔叔', '舅舅', '姑姑', '哥哥', '姐姐', '弟弟', '妹妹', '儿子', '女儿', '妻子', '丈夫', '老板', '老大', '上司', '下属', '同事', '朋友', '助手', '保镖', '管家', '女主', '男主', '主角', '反派', '配角',
+  /* 来源/性质标注（同人、改编常见），不是别名 */
+  '原作', '原创', '同人', '私设', '改编', '衍生', '原创角色', '客串', '龙套', '次要', '主要']);
+/* 别名校验：中文名 1-4 字；拉丁名 3-24 字符（同人/西幻里的 Cal、Ike、Dre'Quan 等简称） */
+const isAliasName = value => {
+  if (!value || NOTE_WORDS.has(value)) return false;
+  if (/^[一-鿿]{1,4}$/.test(value)) return true;
+  return /^[A-Za-z][A-Za-z'’\-. ·]{2,23}$/.test(value);
+};
 export function parseCast(markdown) {
   const lines = markdown.replace(/^﻿/, '').replace(/\r\n?/g, '\n').split('\n');
   const cast = [];
@@ -36,7 +44,7 @@ export function parseCast(markdown) {
       const aliases = [];
       if (parsed[2]) for (const token of parsed[2].split(/[,，、/]/)) {
         const value = token.trim();
-        if (/^[一-鿿]{1,4}$/.test(value) && !NOTE_WORDS.has(value)) aliases.push(value);
+        if (isAliasName(value)) aliases.push(value);
       }
       current = { name, role, aliases, catchphrases: [] };
       continue;
@@ -114,11 +122,29 @@ export function repeatedPhrases(chapterTexts, { minLength = 4, maxLength = 12, f
 }
 
 /* ---------- 人物在场度 ---------- */
-const countOccurrences = (text, needle) => text.split(needle).length - 1;
+const escapeRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+/* 拉丁名按词边界匹配：避免 Ike 命中 Mike、Cal 命中 California 这类误伤；中文名仍按子串计 */
+const nameRegex = (needle, flags = 'g') => {
+  const body = escapeRe(needle);
+  return /[A-Za-z]/.test(needle) ? new RegExp(`(?<![A-Za-z])${body}(?![A-Za-z])`, flags) : new RegExp(body, flags);
+};
+const countOccurrences = (text, needle) => (text.match(nameRegex(needle)) || []).length;
+/* 掩掉已计数的命中，等长占位，避免「Dimez」在「Real Dimez」里被重复计一次 */
+const maskOccurrences = (text, needle) => text.replace(nameRegex(needle), m => '\u0001'.repeat(m.length));
 export function presence(cast, chapterTexts) {
   return cast.map(member => {
-    const names = [member.name, ...member.aliases];
-    const counts = chapterTexts.map(text => names.reduce((sum, name) => sum + countOccurrences(text, name), 0));
+    /* 长名优先，逐层掩码，保证全名与简称不重复计数 */
+    const names = [...new Set([member.name, ...member.aliases])].sort((a, b) => b.length - a.length);
+    const counts = chapterTexts.map(text => {
+      let rest = text, sum = 0;
+      for (const name of names) {
+        const hit = countOccurrences(rest, name);
+        if (!hit) continue;
+        sum += hit;
+        rest = maskOccurrences(rest, name);
+      }
+      return sum;
+    });
     const total = counts.reduce((a, b) => a + b, 0);
     const chaptersAt = counts.map((n, i) => n > 0 ? i : -1).filter(i => i >= 0);
     return {

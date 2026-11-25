@@ -78,6 +78,24 @@ export const tests = [
     assert.equal(gaps[0].name, '麦泰');
     assert.equal(gaps[0].from, 2); /* 章数组下标 2–4＝第 3–5 段缺席，章号由 buildReport 换算 */
   }],
+  ['parseCast keeps latin aliases and rejects source notes', () => {
+    const cast = parseCast(`# 人物档案\n\n## 主角\n\n### Jason Duval（原作、Jason）\n\n## 对立人物\n\n### Brian Heder（原作、Heder）\n\n### Cal Hampton（原作）\n\n## 配角\n\n### Real Dimez（原作、Dimez）\n\n### 无名之辈（原作）\n`);
+    const aliasesOf = Object.fromEntries(cast.map(m => [m.name, m.aliases]));
+    assert.deepEqual(aliasesOf['Jason Duval'], ['Jason']);
+    assert.deepEqual(aliasesOf['Brian Heder'], ['Heder']);
+    assert.deepEqual(aliasesOf['Real Dimez'], ['Dimez']);
+    assert.deepEqual(aliasesOf['Cal Hampton'], [], '「原作」是来源标注，不是别名');
+    assert.deepEqual(aliasesOf['无名之辈'], [], '「原作」不能被单独当成别名');
+  }],
+  ['presence counts latin names on word boundaries without double counting', () => {
+    const cast = parseCast(`# 人物档案\n\n## 反派\n\n### Boobie Ike（原作、Ike）\n\n## 配角\n\n### Real Dimez（原作、Dimez）\n`);
+    const texts = ['Ike 走进来，Mike 跟在后面。', 'Real Dimez 在台上开口，Dimez 唱完就走。'];
+    const members = presence(cast, texts);
+    const ike = members.find(m => m.name === 'Boobie Ike');
+    const dimez = members.find(m => m.name === 'Real Dimez');
+    assert.equal(ike.counts[0], 1, 'Mike 里的 Ike 不算命中');
+    assert.equal(dimez.counts[1], 2, 'Real Dimez 不重复计数，独立出现的 Dimez 另算一次');
+  }],
   ['catchphraseStats counts single-character phrases only as quoted utterances', () => {
     const cast = parseCast(profile);
     const text = '「行。」他说。银行门口排队。不行就算了。「不着急。」';
