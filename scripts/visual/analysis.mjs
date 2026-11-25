@@ -49,13 +49,17 @@ export function parseCast(markdown) {
       current = { name, role, aliases, catchphrases: [] };
       continue;
     }
-    if (current && line.includes('口头禅')) {
+    if (current && /口头禅|说话方式|说话风格|口吻|说话习惯/.test(line)) {
       for (const quoted of line.matchAll(/「([^」]+)」/g)) {
         /* 否定语境（极少用／从不说／避免）里的引语是禁用语，不是口头禅 */
         const before = line.slice(Math.max(0, quoted.index - 6), quoted.index);
         if (/(?:极少|从不|不用|避免|没有|别说|忌)[^」]{0,3}$/.test(before)) continue;
+        /* 引语后紧跟冒号的是术语或关系标注（「导师型对手」：…），不是台词 */
+        const after = line.slice(quoted.index + quoted[0].length, quoted.index + quoted[0].length + 1);
+        if (after === '：' || after === ':') continue;
         const phrase = quoted[1].replace(/[。！？…，、；：\s]/g, '');
-        if (phrase.length >= 1 && phrase.length <= 8 && [...phrase].every(cjk) && !current.catchphrases.includes(phrase)) current.catchphrases.push(phrase);
+        /* 上限 14 字：中文口头禅常带插入语（「我只是说说，别当真啊」去标点 9 字），8 字门槛会漏采 */
+        if (phrase.length >= 1 && phrase.length <= 14 && [...phrase].every(cjk) && !current.catchphrases.includes(phrase)) current.catchphrases.push(phrase);
       }
     }
   }
@@ -176,15 +180,33 @@ export function presenceGaps(members, { gap = 4, priorMentions = 3 } = {}) {
 }
 
 /* ---------- 口头禅声部核对 ---------- */
-/* 单字口头禅（如「行」）裸搜会撞进普通词汇，只在引语内整句匹配 */
+/* 中文对白常写成「孩子，」他说，「坐下，我们谈谈。」：同一轮话被插入语切成两段引语，
+   直接拿整段文本做子串匹配，档案里登记的「孩子坐下我们谈谈」永远命中不到。
+   先把两段引语之间的插入语抹掉拼回一轮，再剥掉标点逐条比对；
+   只在引语内匹配，也让单字口头禅（如「行」）不会撞进普通词汇。 */
+const spokenRuns = text => (text
+  .replace(/[」』][^「『」』\n]{0,12}[「『]/g, '')
+  .match(/「[^」]*」/g) || [])
+  .map(run => run.replace(/[。！？…，、；：\s「」『』]/g, ''));
+const countInRuns = (runs, phrase) => runs.reduce((sum, run) => sum + run.split(phrase).length - 1, 0);
+const stripPunct = text => text.replace(/[。！？…，、；：\s]/g, '');
+/* 单字口头禅只认整条引语，避免「行」撞进普通词汇；
+   多字口头禅取三种口径的最大值：原文精确、去标点（覆盖内心独白里的使用）、
+   合并插入语后去标点（覆盖被「他说，」拆开的同一轮对白）。 */
+const countPhrase = (text, phrase) => {
+  if (phrase.length === 1) return countInRuns(spokenRuns(text), phrase);
+  const merged = text.replace(/[」』][^「『」』\n]{0,12}[「『]/g, '');
+  return Math.max(
+    text.split(phrase).length - 1,
+    stripPunct(text).split(phrase).length - 1,
+    stripPunct(merged).split(phrase).length - 1,
+  );
+};
 export function catchphraseStats(cast, chapterTexts) {
   const rows = [];
   for (const member of cast) {
     for (const phrase of member.catchphrases) {
-      const counts = chapterTexts.map(text => {
-        if (phrase.length === 1) return (text.match(new RegExp(`「[^」]*${phrase}[。！？…]?」`, 'g')) || []).length;
-        return countOccurrences(text, phrase);
-      });
+      const counts = chapterTexts.map(text => countPhrase(text, phrase));
       rows.push({ name: member.name, phrase, counts, total: counts.reduce((a, b) => a + b, 0) });
     }
   }

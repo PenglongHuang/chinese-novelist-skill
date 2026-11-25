@@ -103,6 +103,15 @@ export const tests = [
     assert.equal(rows.find(r => r.phrase === '行').total, 1);
     assert.equal(rows.find(r => r.phrase === '不着急').total, 1);
   }],
+  ['parseCast collects catchphrases from 说话方式 lines and skips term labels', () => {
+    const cast = parseCast(`# 人物档案\n\n## 主角\n\n### 甲\n\n- **说话方式**：慢、轻。「孩子，坐下，我们谈谈。」「我只是说说，别当真啊。」还有「导师型对手」：教他专业。\n`);
+    assert.deepEqual(cast[0].catchphrases, ['孩子坐下我们谈谈', '我只是说说别当真啊']); /* 9 字要能采；冒号后的引语是术语标注 */
+  }],
+  ['catchphraseStats matches dialogue split by speech tags', () => {
+    const cast = [{ name: '赫德', role: '反派', aliases: [], catchphrases: ['孩子坐下我们谈谈'] }];
+    const rows = catchphraseStats(cast, ['他说：「孩子，」他抬起眼，「坐下，我们谈谈。」']);
+    assert.equal(rows[0].total, 1, '被「他抬起眼，」拆开的同一轮对白应能命中');
+  }],
   ['rhythmFlags marks below-minimum and deviation chapters', () => {
     const rows = [{ number: 1, words: 2900 }, { number: 2, words: 3100 }, { number: 3, words: 3120 }, { number: 4, words: 3150 }, { number: 5, words: 5200 }];
     const flagged = rhythmFlags(rows, 3000);
