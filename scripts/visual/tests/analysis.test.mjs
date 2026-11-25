@@ -78,12 +78,48 @@ export const tests = [
     assert.equal(gaps[0].name, '麦泰');
     assert.equal(gaps[0].from, 2); /* 章数组下标 2–4＝第 3–5 段缺席，章号由 buildReport 换算 */
   }],
+  ['presenceGaps extends the gap length beyond the threshold', () => {
+    const cast = [{ name: '配角甲', role: '配角', aliases: [], catchphrases: [] }];
+    const texts = ['配角甲在。', '配角甲在。', '配角甲在。', '没人。', '没人。', '没人。', '没人。', '没人。', '没人。', '配角甲又在。'];
+    const gaps = presenceGaps(presence(cast, texts), { gap: 3 });
+    assert.equal(gaps.length, 1);
+    assert.equal(gaps[0].chapters, 6, '缺席 6 章要报 6 章，不能停在阈值 3');
+    assert.equal(gaps[0].from, 3);
+    assert.equal(gaps[0].to, 8);
+  }],
+  ['parseCast keeps latin aliases and rejects source notes', () => {
+    const cast = parseCast(`# 人物档案\n\n## 主角\n\n### Jason Duval（原作、Jason）\n\n## 对立人物\n\n### Brian Heder（原作、Heder）\n\n### Cal Hampton（原作）\n\n## 配角\n\n### Real Dimez（原作、Dimez）\n\n### 无名之辈（原作）\n`);
+    const aliasesOf = Object.fromEntries(cast.map(m => [m.name, m.aliases]));
+    assert.deepEqual(aliasesOf['Jason Duval'], ['Jason']);
+    assert.deepEqual(aliasesOf['Brian Heder'], ['Heder']);
+    assert.deepEqual(aliasesOf['Real Dimez'], ['Dimez']);
+    assert.deepEqual(aliasesOf['Cal Hampton'], [], '「原作」是来源标注，不是别名');
+    assert.deepEqual(aliasesOf['无名之辈'], [], '「原作」不能被单独当成别名');
+  }],
+  ['presence counts latin names on word boundaries without double counting', () => {
+    const cast = parseCast(`# 人物档案\n\n## 反派\n\n### Boobie Ike（原作、Ike）\n\n## 配角\n\n### Real Dimez（原作、Dimez）\n`);
+    const texts = ['Ike 走进来，Mike 跟在后面。', 'Real Dimez 在台上开口，Dimez 唱完就走。'];
+    const members = presence(cast, texts);
+    const ike = members.find(m => m.name === 'Boobie Ike');
+    const dimez = members.find(m => m.name === 'Real Dimez');
+    assert.equal(ike.counts[0], 1, 'Mike 里的 Ike 不算命中');
+    assert.equal(dimez.counts[1], 2, 'Real Dimez 不重复计数，独立出现的 Dimez 另算一次');
+  }],
   ['catchphraseStats counts single-character phrases only as quoted utterances', () => {
     const cast = parseCast(profile);
     const text = '「行。」他说。银行门口排队。不行就算了。「不着急。」';
     const rows = catchphraseStats(cast, [text]);
     assert.equal(rows.find(r => r.phrase === '行').total, 1);
     assert.equal(rows.find(r => r.phrase === '不着急').total, 1);
+  }],
+  ['parseCast collects catchphrases from 说话方式 lines and skips term labels', () => {
+    const cast = parseCast(`# 人物档案\n\n## 主角\n\n### 甲\n\n- **说话方式**：慢、轻。「孩子，坐下，我们谈谈。」「我只是说说，别当真啊。」还有「导师型对手」：教他专业。\n`);
+    assert.deepEqual(cast[0].catchphrases, ['孩子坐下我们谈谈', '我只是说说别当真啊']); /* 9 字要能采；冒号后的引语是术语标注 */
+  }],
+  ['catchphraseStats matches dialogue split by speech tags', () => {
+    const cast = [{ name: '赫德', role: '反派', aliases: [], catchphrases: ['孩子坐下我们谈谈'] }];
+    const rows = catchphraseStats(cast, ['他说：「孩子，」他抬起眼，「坐下，我们谈谈。」']);
+    assert.equal(rows[0].total, 1, '被「他抬起眼，」拆开的同一轮对白应能命中');
   }],
   ['rhythmFlags marks below-minimum and deviation chapters', () => {
     const rows = [{ number: 1, words: 2900 }, { number: 2, words: 3100 }, { number: 3, words: 3120 }, { number: 4, words: 3150 }, { number: 5, words: 5200 }];
