@@ -171,8 +171,9 @@ export function presenceGaps(members, { gap = 4, priorMentions = 3 } = {}) {
         absent = 0; run = null; seen += counts[i];
       } else if (seen >= priorMentions) {
         absent++;
+        /* 缺口一旦成立就接着延长：to 与 chapters 必须同步增长，否则超过 gap 的断档会被报成「连续 gap 章」 */
         if (absent === gap) run = { from: i - gap + 1, to: i, chapters: absent };
-        else if (run) run.to = i;
+        else if (run) { run.to = i; run.chapters = absent; }
       }
     }
   }

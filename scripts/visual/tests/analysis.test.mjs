@@ -78,6 +78,15 @@ export const tests = [
     assert.equal(gaps[0].name, '麦泰');
     assert.equal(gaps[0].from, 2); /* 章数组下标 2–4＝第 3–5 段缺席，章号由 buildReport 换算 */
   }],
+  ['presenceGaps extends the gap length beyond the threshold', () => {
+    const cast = [{ name: '配角甲', role: '配角', aliases: [], catchphrases: [] }];
+    const texts = ['配角甲在。', '配角甲在。', '配角甲在。', '没人。', '没人。', '没人。', '没人。', '没人。', '没人。', '配角甲又在。'];
+    const gaps = presenceGaps(presence(cast, texts), { gap: 3 });
+    assert.equal(gaps.length, 1);
+    assert.equal(gaps[0].chapters, 6, '缺席 6 章要报 6 章，不能停在阈值 3');
+    assert.equal(gaps[0].from, 3);
+    assert.equal(gaps[0].to, 8);
+  }],
   ['parseCast keeps latin aliases and rejects source notes', () => {
     const cast = parseCast(`# 人物档案\n\n## 主角\n\n### Jason Duval（原作、Jason）\n\n## 对立人物\n\n### Brian Heder（原作、Heder）\n\n### Cal Hampton（原作）\n\n## 配角\n\n### Real Dimez（原作、Dimez）\n\n### 无名之辈（原作）\n`);
     const aliasesOf = Object.fromEntries(cast.map(m => [m.name, m.aliases]));
